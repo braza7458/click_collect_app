@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final displayName = namePart.isEmpty
         ? 'Client'
         : namePart[0].toUpperCase() + namePart.substring(1);
-    AppStateScope.of(context).loginAs(displayName);
+    AppStateScope.of(context).loginAs(displayName, email: _emailController.text.trim());
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const DashboardShell()),
       (route) => false,

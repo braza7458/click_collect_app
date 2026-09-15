@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/order_mode_sheet.dart';
+import '../../widgets/help_dialog.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onNavigate});
@@ -97,7 +97,7 @@ class HomeTab extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: () => showOrderModeSheet(context),
+                onPressed: () => onNavigate(2),
                 icon: const Icon(Icons.shopping_bag_outlined, size: 20),
                 label: const Text('Commander'),
               ),
@@ -107,13 +107,17 @@ class HomeTab extends StatelessWidget {
         const SizedBox(height: 28),
         Text('Événements & Ateliers', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 132,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _events.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, i) => _EventCard(event: _events[i]),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                for (var i = 0; i < _events.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 12),
+                  _EventCard(event: _events[i]),
+                ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 28),
@@ -130,21 +134,7 @@ class HomeTab extends StatelessWidget {
           title: 'Besoin d\'assistance ?',
           description: 'Une question sur votre commande ou votre compte fidélité ?',
           buttonLabel: 'Consulter l\'aide',
-          onPressed: () => showDialog(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              title: const Text('Besoin d\'aide ?'),
-              content: const Text(
-                'Contactez-nous au 01 23 45 67 89 ou directement en boutique. Notre équipe vous répond du mardi au dimanche.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Fermer'),
-                ),
-              ],
-            ),
-          ),
+          onPressed: () => showHelpDialog(context),
         ),
       ],
     );

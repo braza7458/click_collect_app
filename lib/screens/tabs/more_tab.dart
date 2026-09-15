@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/help_dialog.dart';
+import '../choose_restaurant_screen.dart';
+import '../legal/cgu_screen.dart';
+import '../legal/privacy_screen.dart';
+import '../notifications_screen.dart';
+import '../order_history_screen.dart';
+import '../profile_screen.dart';
 import '../welcome_screen.dart';
 
 class MoreTab extends StatelessWidget {
@@ -86,17 +93,51 @@ class MoreTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        _MenuTile(icon: Icons.person_outline, label: 'Mon profil'),
+        _MenuTile(
+          icon: Icons.person_outline,
+          label: 'Mon profil',
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen())),
+        ),
         const SizedBox(height: 10),
-        _MenuTile(icon: Icons.receipt_long_outlined, label: 'Mes commandes'),
+        _MenuTile(
+          icon: Icons.receipt_long_outlined,
+          label: 'Mes commandes',
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const OrderHistoryScreen())),
+        ),
         const SizedBox(height: 10),
-        _MenuTile(icon: Icons.storefront_outlined, label: 'Mon restaurant favori'),
+        _MenuTile(
+          icon: Icons.storefront_outlined,
+          label: 'Mon restaurant favori',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ChooseRestaurantScreen(isOnboarding: false)),
+          ),
+        ),
         const SizedBox(height: 10),
-        _MenuTile(icon: Icons.notifications_outlined, label: 'Notifications'),
+        _MenuTile(
+          icon: Icons.notifications_outlined,
+          label: appState.unreadNotificationCount > 0
+              ? 'Notifications (${appState.unreadNotificationCount})'
+              : 'Notifications',
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+        ),
         const SizedBox(height: 10),
-        _MenuTile(icon: Icons.help_outline, label: 'Aide'),
+        _MenuTile(
+          icon: Icons.help_outline,
+          label: 'Aide',
+          onTap: () => showHelpDialog(context),
+        ),
         const SizedBox(height: 10),
-        _MenuTile(icon: Icons.description_outlined, label: 'Conditions Générales d\'Utilisation'),
+        _MenuTile(
+          icon: Icons.description_outlined,
+          label: 'Conditions Générales d\'Utilisation',
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CguScreen())),
+        ),
+        const SizedBox(height: 10),
+        _MenuTile(
+          icon: Icons.privacy_tip_outlined,
+          label: 'Politique de confidentialité',
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyScreen())),
+        ),
         const SizedBox(height: 16),
         const Divider(height: 1),
         const SizedBox(height: 16),

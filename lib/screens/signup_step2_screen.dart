@@ -5,9 +5,10 @@ import '../theme/app_theme.dart';
 import 'choose_restaurant_screen.dart';
 
 class SignupStep2Screen extends StatefulWidget {
-  const SignupStep2Screen({super.key, required this.firstName});
+  const SignupStep2Screen({super.key, required this.firstName, required this.email});
 
   final String firstName;
+  final String email;
 
   @override
   State<SignupStep2Screen> createState() => _SignupStep2ScreenState();
@@ -21,7 +22,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
   void _validate() {
     if (!_acceptedTerms) return;
     final appState = AppStateScope.of(context);
-    appState.loginAs(widget.firstName, points: 0);
+    appState.loginAs(widget.firstName, points: 0, email: widget.email);
     appState.setOptIns(email: _emailOptIn, sms: _smsOptIn);
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const ChooseRestaurantScreen()),
@@ -119,7 +120,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                     _ConsentCheckbox(
                       value: _acceptedTerms,
                       onChanged: (v) => setState(() => _acceptedTerms = v),
-                      title: 'J\'accepte les Conditions Générales d\'Utilisation',
+                      title: 'J\'accepte les Conditions Générales d\'Utilisation et la Politique de confidentialité',
                       required: true,
                     ),
                     _ConsentCheckbox(

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../data/loyalty_data.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/order_summary_card.dart';
+import '../order_history_screen.dart';
 
 class FidelityTab extends StatelessWidget {
   const FidelityTab({super.key});
@@ -112,9 +114,18 @@ class FidelityTab extends StatelessWidget {
                 const SizedBox(width: 8),
                 OutlinedButton(
                   onPressed: unlocked
-                      ? () => ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Récompense "${tier.label}" échangée.')),
-                          )
+                      ? () {
+                          final success = appState.redeemReward(tier);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? 'Récompense "${tier.label}" échangée — présentez cet écran en caisse.'
+                                    : 'Points insuffisants pour cette récompense.',
+                              ),
+                            ),
+                          );
+                        }
                       : null,
                   child: const Text('Échanger'),
                 ),
@@ -123,23 +134,42 @@ class FidelityTab extends StatelessWidget {
           );
         }),
         const SizedBox(height: 12),
-        Text('Historique', style: textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 32),
-          decoration: BoxDecoration(
-            color: AppColors.charcoalSoft,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.divider),
-          ),
-          child: Column(
-            children: [
-              Icon(Icons.receipt_long_outlined, color: AppColors.creamMuted.withValues(alpha: 0.6), size: 36),
-              const SizedBox(height: 8),
-              Text('Aucune commande pour le moment', style: textTheme.bodyMedium),
-            ],
-          ),
+        Row(
+          children: [
+            Expanded(child: Text('Historique', style: textTheme.titleMedium)),
+            if (appState.orderHistory.length > 3)
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                ),
+                child: const Text('Voir tout'),
+              ),
+          ],
         ),
+        const SizedBox(height: 4),
+        if (appState.orderHistory.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            decoration: BoxDecoration(
+              color: AppColors.charcoalSoft,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.receipt_long_outlined, color: AppColors.creamMuted.withValues(alpha: 0.6), size: 36),
+                const SizedBox(height: 8),
+                Text('Aucune commande pour le moment', style: textTheme.bodyMedium),
+              ],
+            ),
+          )
+        else
+          ...appState.orderHistory.take(3).map(
+                (order) => Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: OrderSummaryCard(order: order),
+                ),
+              ),
       ],
     );
   }

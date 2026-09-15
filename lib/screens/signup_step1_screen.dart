@@ -59,7 +59,10 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
     if (!_canContinue) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SignupStep2Screen(firstName: _firstNameController.text.trim()),
+        builder: (_) => SignupStep2Screen(
+          firstName: _firstNameController.text.trim(),
+          email: _emailController.text.trim(),
+        ),
       ),
     );
   }

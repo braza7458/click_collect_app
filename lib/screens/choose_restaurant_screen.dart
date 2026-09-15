@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../data/restaurant_data.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/restaurant_picker_sheet.dart';
 import 'loyalty_intro_screen.dart';
 
 class ChooseRestaurantScreen extends StatefulWidget {
-  const ChooseRestaurantScreen({super.key});
+  /// When true (signup flow), confirming pushes the loyalty intro screen.
+  /// When false (revisited from Plus > Mon restaurant favori), confirming
+  /// just saves the choice and returns.
+  const ChooseRestaurantScreen({super.key, this.isOnboarding = true});
+
+  final bool isOnboarding;
 
   @override
   State<ChooseRestaurantScreen> createState() => _ChooseRestaurantScreenState();
@@ -14,64 +20,23 @@ class ChooseRestaurantScreen extends StatefulWidget {
 
 class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
   RestaurantLocation? _selected;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      if (!widget.isOnboarding) {
+        final favorite = AppStateScope.of(context).favoriteRestaurantName;
+        final matches = restaurantLocations.where((r) => r.name == favorite);
+        if (matches.isNotEmpty) _selected = matches.first;
+      }
+    }
+  }
 
   Future<void> _openPicker() async {
-    final picked = await showModalBottomSheet<RestaurantLocation>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'CHOISIR UN RESTAURANT',
-                      style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(letterSpacing: 0.4),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.close_rounded, color: AppColors.cream),
-                      tooltip: 'Fermer',
-                      onPressed: () => Navigator.of(sheetContext).pop(),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ...restaurantLocations.map(
-                (r) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.storefront_outlined, color: AppColors.orange),
-                  title: Text(r.name, style: Theme.of(sheetContext).textTheme.titleMedium),
-                  subtitle: Text('${r.address} — ${r.hours}', style: Theme.of(sheetContext).textTheme.bodySmall),
-                  onTap: () => Navigator.of(sheetContext).pop(r),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    final picked = await showRestaurantPickerSheet(context);
     if (picked != null && mounted) {
       setState(() => _selected = picked);
     }
@@ -80,14 +45,22 @@ class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
   void _confirm() {
     if (_selected == null) return;
     AppStateScope.of(context).setFavoriteRestaurant(_selected!.name);
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LoyaltyIntroScreen()),
-    );
+    if (widget.isOnboarding) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const LoyaltyIntroScreen()),
+      );
+    } else {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Restaurant favori mis à jour.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: widget.isOnboarding ? null : AppBar(title: const Text('Restaurant favori')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -151,7 +124,7 @@ class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
               const Spacer(flex: 2),
               ElevatedButton(
                 onPressed: _selected != null ? _confirm : null,
-                child: const Text('Je valide mon restaurant'),
+                child: Text(widget.isOnboarding ? 'Je valide mon restaurant' : 'Enregistrer'),
               ),
             ],
           ),

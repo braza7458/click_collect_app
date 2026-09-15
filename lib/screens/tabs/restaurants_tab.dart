@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/restaurant_data.dart';
 import '../../theme/app_theme.dart';
+
+Future<void> _openItinerary(BuildContext context, RestaurantLocation restaurant) async {
+  final query = Uri.encodeComponent('${restaurant.name} ${restaurant.address}');
+  final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+  final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!opened && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Impossible d\'ouvrir le plan.')),
+    );
+  }
+}
 
 class RestaurantsTab extends StatelessWidget {
   const RestaurantsTab({super.key});
@@ -88,9 +100,7 @@ class RestaurantsTab extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: OutlinedButton.icon(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Fonctionnalité à venir.')),
-                  ),
+                  onPressed: () => _openItinerary(context, restaurant),
                   icon: const Icon(Icons.directions_outlined, size: 18),
                   label: const Text('Itinéraire'),
                 ),
