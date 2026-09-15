@@ -8,67 +8,83 @@ class RestaurantsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       itemCount: restaurantLocations.length + 1,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 16),
       itemBuilder: (context, i) {
         if (i == 0) {
-          return Text('Nos restaurants', style: Theme.of(context).textTheme.headlineSmall);
+          return Text('Nos restaurants', style: textTheme.headlineSmall);
         }
         final restaurant = restaurantLocations[i - 1];
+        final statusColor = restaurant.isOpenNow ? AppColors.green : AppColors.red;
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: AppColors.charcoalSoft,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.divider),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(restaurant.name, style: Theme.of(context).textTheme.titleMedium)),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: restaurant.isOpenNow ? AppColors.green : AppColors.red,
-                          shape: BoxShape.circle,
+                  Expanded(child: Text(restaurant.name, style: textTheme.titleMedium)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        restaurant.isOpenNow ? 'Ouvert' : 'Fermé',
-                        style: TextStyle(
-                          color: restaurant.isOpenNow ? AppColors.green : AppColors.red,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                        const SizedBox(width: 6),
+                        Text(
+                          restaurant.isOpenNow ? 'Ouvert' : 'Fermé',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.location_on_outlined, size: 16, color: AppColors.creamMuted),
                   const SizedBox(width: 6),
-                  Expanded(child: Text(restaurant.address, style: Theme.of(context).textTheme.bodySmall)),
+                  Expanded(child: Text(restaurant.address, style: textTheme.bodySmall)),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   const Icon(Icons.schedule_outlined, size: 16, color: AppColors.creamMuted),
                   const SizedBox(width: 6),
-                  Text(restaurant.hours, style: Theme.of(context).textTheme.bodySmall),
+                  Text(restaurant.hours, style: textTheme.bodySmall),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Align(
                 alignment: Alignment.centerLeft,
                 child: OutlinedButton.icon(

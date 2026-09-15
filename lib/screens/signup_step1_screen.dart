@@ -66,23 +66,29 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Créer un compte')),
       body: SafeArea(
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
               child: Row(
                 children: [
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: const LinearProgressIndicator(value: 0.5, minHeight: 6),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: LinearProgressIndicator(
+                        value: 0.5,
+                        minHeight: 6,
+                        backgroundColor: AppColors.charcoalSoft,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.orange),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Text('Étape 1/2', style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(width: 12),
+                  Text('Étape 1/2', style: textTheme.bodySmall),
                 ],
               ),
             ),
@@ -92,26 +98,26 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Vos informations', style: Theme.of(context).textTheme.headlineMedium),
+                    Text('Vos informations', style: textTheme.headlineMedium),
                     const SizedBox(height: 20),
                     TextField(
                       controller: _firstNameController,
-                      style: const TextStyle(color: AppColors.cream),
+                      style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
                       decoration: const InputDecoration(labelText: 'Prénom'),
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 16),
                     InkWell(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                       onTap: _pickBirthDate,
                       child: InputDecorator(
                         decoration: const InputDecoration(
                           labelText: 'Date de naissance',
-                          suffixIcon: Icon(Icons.calendar_today_outlined, size: 20),
+                          suffixIcon: Icon(Icons.calendar_today_outlined, size: 22, color: AppColors.creamMuted),
                         ),
                         child: Text(
                           _birthDate == null ? 'Sélectionner une date' : _formatDate(_birthDate!),
-                          style: TextStyle(
+                          style: textTheme.bodyLarge?.copyWith(
                             color: _birthDate == null ? AppColors.creamMuted.withValues(alpha: 0.6) : AppColors.cream,
                           ),
                         ),
@@ -121,7 +127,7 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: AppColors.cream),
+                      style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
                       decoration: const InputDecoration(labelText: 'E-mail'),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -129,11 +135,11 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
-                      style: const TextStyle(color: AppColors.cream),
+                      style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
                       decoration: const InputDecoration(labelText: 'Mot de passe'),
                       onChanged: (_) => setState(() {}),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     _ValidationRow(label: 'Au minimum 8 caractères', valid: _hasMinLength),
                     _ValidationRow(label: 'Au moins un chiffre', valid: _hasDigit),
                     _ValidationRow(label: 'Au moins une majuscule', valid: _hasUppercase),
@@ -143,9 +149,12 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: ElevatedButton(
-                onPressed: _canContinue ? _continue : null,
-                child: const Text('Continuer'),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _canContinue ? _continue : null,
+                  child: const Text('Continuer'),
+                ),
               ),
             ),
           ],
@@ -165,16 +174,21 @@ class _ValidationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = valid ? AppColors.green : AppColors.creamMuted;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
           Icon(
-            valid ? Icons.check_circle : Icons.circle_outlined,
+            valid ? Icons.check_circle_outline_rounded : Icons.circle_outlined,
             size: 18,
             color: color,
           ),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: color, fontSize: 13)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+            ),
+          ),
         ],
       ),
     );

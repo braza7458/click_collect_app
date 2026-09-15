@@ -51,7 +51,7 @@ class _OrderTabState extends State<OrderTab> {
           child: ElevatedButton.icon(
             onPressed: () => showOrderModeSheet(context),
             icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-            label: const Text('COMMANDER'),
+            label: const Text('Commander'),
           ),
         ),
       ],
@@ -82,11 +82,12 @@ class _CategoryChips extends StatelessWidget {
             onSelected: (_) => onSelected(i),
             selectedColor: AppColors.orange,
             backgroundColor: AppColors.charcoalSoft,
-            labelStyle: TextStyle(
-              color: isSelected ? AppColors.charcoal : AppColors.cream,
-              fontWeight: FontWeight.w600,
-            ),
-            side: BorderSide(color: isSelected ? AppColors.orange : AppColors.creamMuted.withValues(alpha: 0.25)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+            labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: isSelected ? AppColors.charcoal : AppColors.cream,
+                  letterSpacing: 0,
+                ),
+            side: BorderSide(color: isSelected ? AppColors.orange : AppColors.divider),
           );
         },
       ),
@@ -105,8 +106,11 @@ class _MenuTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.charcoalSoft,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 2, offset: const Offset(0, 1)),
+        ],
       ),
       child: Row(
         children: [
@@ -114,10 +118,10 @@ class _MenuTile extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppColors.orange.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.orange.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.restaurant, color: AppColors.orange),
+            child: const Icon(Icons.restaurant_outlined, color: AppColors.orange, size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -132,9 +136,10 @@ class _MenuTile extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 10),
           Text(
             item.price,
-            style: const TextStyle(color: AppColors.orange, fontWeight: FontWeight.bold, fontSize: 15),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.orange, fontWeight: FontWeight.w700),
           ),
         ],
       ),

@@ -26,14 +26,44 @@ class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Choisir un restaurant', style: Theme.of(sheetContext).textTheme.headlineSmall),
-              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'CHOISIR UN RESTAURANT',
+                      style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(letterSpacing: 0.4),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.close_rounded, color: AppColors.cream),
+                      tooltip: 'Fermer',
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               ...restaurantLocations.map(
                 (r) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.storefront_outlined, color: AppColors.orange),
                   title: Text(r.name, style: Theme.of(sheetContext).textTheme.titleMedium),
-                  subtitle: Text('${r.address} — ${r.hours}'),
+                  subtitle: Text('${r.address} — ${r.hours}', style: Theme.of(sheetContext).textTheme.bodySmall),
                   onTap: () => Navigator.of(sheetContext).pop(r),
                 ),
               ),
@@ -69,9 +99,9 @@ class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.orange.withValues(alpha: 0.15),
+                  color: AppColors.orange.withValues(alpha: 0.12),
                 ),
-                child: const Icon(Icons.storefront, color: AppColors.orange, size: 56),
+                child: const Icon(Icons.storefront_outlined, color: AppColors.orange, size: 52),
               ),
               const SizedBox(height: 28),
               Text('Mon restaurant favori', style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
@@ -83,15 +113,22 @@ class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
               ),
               const SizedBox(height: 28),
               InkWell(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
                 onTap: _openPicker,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: AppColors.charcoalSoft,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.creamMuted.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    border: Border.all(color: AppColors.divider),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        offset: const Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -100,13 +137,13 @@ class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
                       Expanded(
                         child: Text(
                           _selected?.name ?? 'Choisir un restaurant',
-                          style: TextStyle(
-                            color: _selected == null ? AppColors.creamMuted.withValues(alpha: 0.7) : AppColors.cream,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: _selected == null ? AppColors.creamMuted.withValues(alpha: 0.7) : AppColors.cream,
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.creamMuted),
+                      const Icon(Icons.chevron_right_rounded, color: AppColors.creamMuted),
                     ],
                   ),
                 ),

@@ -29,22 +29,68 @@ class _DashboardShellState extends State<DashboardShell> {
       const MoreTab(),
     ];
 
+    final navTextTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: SafeArea(
         child: IndexedStack(index: _navIndex, children: tabs),
       ),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: AppColors.charcoalSoft,
-        indicatorColor: AppColors.orange.withValues(alpha: 0.22),
-        selectedIndex: _navIndex,
-        onDestinationSelected: _goToTab,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Pour vous'),
-          NavigationDestination(icon: Icon(Icons.place_outlined), selectedIcon: Icon(Icons.place), label: 'Restaurants'),
-          NavigationDestination(icon: Icon(Icons.restaurant_menu_outlined), selectedIcon: Icon(Icons.restaurant_menu), label: 'Commander'),
-          NavigationDestination(icon: Icon(Icons.loyalty_outlined), selectedIcon: Icon(Icons.loyalty), label: 'Fidélité'),
-          NavigationDestination(icon: Icon(Icons.menu_outlined), selectedIcon: Icon(Icons.menu), label: 'Plus'),
-        ],
+      bottomNavigationBar: DecoratedBox(
+        // Hairline top border instead of a heavy Material shadow — the
+        // "elevation from borders, not fills" language of the design system.
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+        ),
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              final base = navTextTheme.labelSmall ?? const TextStyle(fontSize: 12);
+              return base.copyWith(
+                color: states.contains(WidgetState.selected) ? AppColors.orange : AppColors.creamMuted,
+                fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+              );
+            }),
+          ),
+          child: NavigationBar(
+            height: 68,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            backgroundColor: AppColors.charcoalSoft,
+            // Filled icon + gold tint marks the selected tab; the soft gold
+            // indicator pill sits behind it at low opacity (never a hard fill).
+            indicatorColor: AppColors.orange.withValues(alpha: 0.16),
+            indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+            selectedIndex: _navIndex,
+            onDestinationSelected: _goToTab,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.storefront_outlined, color: AppColors.creamMuted),
+                selectedIcon: Icon(Icons.storefront, color: AppColors.orange),
+                label: 'Pour vous',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.place_outlined, color: AppColors.creamMuted),
+                selectedIcon: Icon(Icons.place, color: AppColors.orange),
+                label: 'Restaurants',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.restaurant_menu_outlined, color: AppColors.creamMuted),
+                selectedIcon: Icon(Icons.restaurant_menu, color: AppColors.orange),
+                label: 'Commander',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.loyalty_outlined, color: AppColors.creamMuted),
+                selectedIcon: Icon(Icons.loyalty, color: AppColors.orange),
+                label: 'Fidélité',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.menu_outlined, color: AppColors.creamMuted),
+                selectedIcon: Icon(Icons.menu, color: AppColors.orange),
+                label: 'Plus',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

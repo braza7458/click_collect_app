@@ -10,6 +10,7 @@ class FidelityTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = AppStateScope.of(context);
+    final textTheme = Theme.of(context).textTheme;
     final nextTier = rewardTiers.firstWhere(
       (t) => t.points > appState.points,
       orElse: () => rewardTiers.last,
@@ -19,7 +20,7 @@ class FidelityTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       children: [
-        Text('Fidélité', style: Theme.of(context).textTheme.headlineSmall),
+        Text('Fidélité', style: textTheme.headlineSmall),
         const SizedBox(height: 20),
         Container(
           width: double.infinity,
@@ -30,16 +31,29 @@ class FidelityTab extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${appState.points}', style: Theme.of(context).textTheme.displayMedium?.copyWith(color: AppColors.charcoal)),
-              Text('points cumulés', style: TextStyle(color: AppColors.charcoal.withValues(alpha: 0.8))),
+              Text(
+                '${appState.points}',
+                style: textTheme.displayMedium?.copyWith(color: AppColors.charcoal),
+              ),
+              Text(
+                'points cumulés',
+                style: textTheme.bodyMedium?.copyWith(color: AppColors.charcoal.withValues(alpha: 0.8)),
+              ),
               const SizedBox(height: 16),
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
@@ -50,13 +64,13 @@ class FidelityTab extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Plus que ${(nextTier.points - appState.points).clamp(0, nextTier.points)} points pour "${nextTier.label}"',
-                style: TextStyle(color: AppColors.charcoal.withValues(alpha: 0.85), fontSize: 13),
+                style: textTheme.bodySmall?.copyWith(color: AppColors.charcoal.withValues(alpha: 0.85)),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        Text('Récompenses disponibles', style: Theme.of(context).textTheme.titleMedium),
+        Text('Récompenses disponibles', style: textTheme.titleMedium),
         const SizedBox(height: 12),
         ...rewardTiers.map((tier) {
           final unlocked = appState.points >= tier.points;
@@ -64,30 +78,38 @@ class FidelityTab extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.charcoalSoft,
-              borderRadius: BorderRadius.circular(14),
+              color: unlocked ? AppColors.surfaceAlt : AppColors.charcoalSoft,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(
+                color: unlocked ? AppColors.orange.withValues(alpha: 0.4) : AppColors.divider,
+              ),
+              boxShadow: const [
+                BoxShadow(color: Color(0x66000000), blurRadius: 2, offset: Offset(0, 1)),
+              ],
             ),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppColors.orange.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.orange.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
                   ),
-                  child: Icon(tier.icon, color: AppColors.orange),
+                  child: Icon(tier.icon, color: AppColors.orange, size: 24),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(tier.label, style: Theme.of(context).textTheme.titleMedium),
-                      Text('${tier.points} points', style: Theme.of(context).textTheme.bodySmall),
+                      Text(tier.label, style: textTheme.titleMedium),
+                      Text('${tier.points} points', style: textTheme.bodySmall),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 OutlinedButton(
                   onPressed: unlocked
                       ? () => ScaffoldMessenger.of(context).showSnackBar(
@@ -101,19 +123,20 @@ class FidelityTab extends StatelessWidget {
           );
         }),
         const SizedBox(height: 12),
-        Text('Historique', style: Theme.of(context).textTheme.titleMedium),
+        Text('Historique', style: textTheme.titleMedium),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(vertical: 32),
           decoration: BoxDecoration(
             color: AppColors.charcoalSoft,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.divider),
           ),
           child: Column(
             children: [
               Icon(Icons.receipt_long_outlined, color: AppColors.creamMuted.withValues(alpha: 0.6), size: 36),
               const SizedBox(height: 8),
-              Text('Aucune commande pour le moment', style: Theme.of(context).textTheme.bodyMedium),
+              Text('Aucune commande pour le moment', style: textTheme.bodyMedium),
             ],
           ),
         ),

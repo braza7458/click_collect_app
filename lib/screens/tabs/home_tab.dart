@@ -57,10 +57,7 @@ class HomeTab extends StatelessWidget {
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.charcoalSoft,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          decoration: _level1Decoration(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -80,7 +77,10 @@ class HomeTab extends StatelessWidget {
                         decoration: const BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
                       ),
                       const SizedBox(width: 6),
-                      const Text('Ouvert', style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text(
+                        'Ouvert',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.green, letterSpacing: 0),
+                      ),
                     ],
                   ),
                 ],
@@ -158,7 +158,7 @@ class HomeTab extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.qr_code_2, size: 160, color: AppColors.cream),
+            const Icon(Icons.qr_code_2, size: 160, color: AppColors.orange),
             const SizedBox(height: 12),
             Text(appState.isGuest ? 'Invité' : appState.firstName, style: Theme.of(dialogContext).textTheme.titleMedium),
             Text('${appState.points} points', style: Theme.of(dialogContext).textTheme.bodyMedium),
@@ -188,10 +188,24 @@ class _ServiceBadge extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: AppColors.creamMuted),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(color: AppColors.creamMuted, fontSize: 12)),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
+}
+
+/// Level-1 elevation: [AppColors.charcoalSoft] fill, a hairline
+/// [AppColors.divider] border, and a barely-there shadow purely to lift the
+/// edge off the near-black background — used for standard cards/list tiles.
+BoxDecoration _level1Decoration({double radius = AppRadius.lg}) {
+  return BoxDecoration(
+    color: AppColors.charcoalSoft,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: AppColors.divider),
+    boxShadow: [
+      BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.4), blurRadius: 2, offset: const Offset(0, 1)),
+    ],
+  );
 }
 
 class _Offer {
@@ -218,28 +232,38 @@ class _OfferCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.orangeDark, AppColors.red],
+          colors: [AppColors.secondary, AppColors.orangeDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: [
+          BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(20),
+              color: AppColors.badgeAmber,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
-            child: Text(offer.title, style: const TextStyle(color: AppColors.cream, fontSize: 11, fontWeight: FontWeight.w700)),
+            child: Text(
+              offer.title,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.charcoal,
+                    fontSize: 11,
+                    letterSpacing: 0,
+                  ),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             offer.subtitle,
-            style: const TextStyle(color: AppColors.cream, fontWeight: FontWeight.w600, fontSize: 15),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.cream),
           ),
         ],
       ),
@@ -269,14 +293,20 @@ class _EventCard extends StatelessWidget {
     return Container(
       width: 210,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.charcoalSoft,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: _level1Decoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(event.icon, color: AppColors.orange),
+          Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.orange.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(event.icon, color: AppColors.orange, size: 20),
+          ),
           const SizedBox(height: 8),
           Text(event.title, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
           Text(event.date, style: Theme.of(context).textTheme.bodySmall),
@@ -284,7 +314,7 @@ class _EventCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              style: TextButton.styleFrom(minimumSize: const Size(0, 36), padding: EdgeInsets.zero),
+              style: TextButton.styleFrom(minimumSize: const Size(0, 48), padding: EdgeInsets.zero),
               onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Réservation pour "${event.title}" enregistrée.')),
               ),
@@ -316,19 +346,17 @@ class _ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.charcoalSoft,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: _level1Decoration(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 44,
             height: 44,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.orange.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.orange.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Icon(icon, color: AppColors.orange),
           ),
@@ -344,9 +372,12 @@ class _ActionCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
-                    style: TextButton.styleFrom(minimumSize: const Size(0, 36), padding: EdgeInsets.zero),
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 48), padding: EdgeInsets.zero),
                     onPressed: onPressed,
-                    child: Text(buttonLabel, style: const TextStyle(color: AppColors.orange, fontWeight: FontWeight.w700)),
+                    child: Text(
+                      buttonLabel,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.orange, letterSpacing: 0),
+                    ),
                   ),
                 ),
               ],

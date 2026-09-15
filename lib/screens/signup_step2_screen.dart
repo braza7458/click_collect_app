@@ -41,34 +41,55 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                 children: [
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: const LinearProgressIndicator(value: 1, minHeight: 6),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: LinearProgressIndicator(
+                        value: 1,
+                        minHeight: 6,
+                        backgroundColor: AppColors.charcoalSoft,
+                        valueColor: const AlwaysStoppedAnimation(AppColors.orange),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Text('Étape 2/2', style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Programme de fidélité', style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 18),
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         color: AppColors.charcoalSoft,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.orange.withValues(alpha: 0.35)),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: AppColors.orange.withValues(alpha: 0.3)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.orangeDark.withValues(alpha: 0.4),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.loyalty, color: AppColors.orange, size: 28),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.orange.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.loyalty, color: AppColors.orange, size: 22),
+                          ),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
@@ -86,9 +107,15 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    Text('Consentements', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 28),
+                    Text(
+                      'CONSENTEMENTS',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: AppColors.creamMuted,
+                            letterSpacing: 1.1,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
                     _ConsentCheckbox(
                       value: _acceptedTerms,
                       onChanged: (v) => setState(() => _acceptedTerms = v),
@@ -139,7 +166,7 @@ class _ConsentCheckbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       onTap: () => onChanged(!value),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),

@@ -36,40 +36,51 @@ class WelcomeScreen extends StatelessWidget {
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 28),
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
               child: Column(
                 children: [
                   const Spacer(flex: 3),
                   Container(
-                    width: 100,
-                    height: 100,
+                    width: 104,
+                    height: 104,
+                    padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.cream, width: 3),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/images/logo.jpg'),
-                        fit: BoxFit.cover,
-                      ),
+                      color: AppColors.charcoalSoft,
+                      border: Border.all(color: AppColors.orange, width: 2.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
+                          color: AppColors.charcoal.withValues(alpha: 0.4),
                           blurRadius: 24,
                           offset: const Offset(0, 10),
                         ),
+                        BoxShadow(
+                          color: AppColors.orangeDark.withValues(alpha: 0.22),
+                          blurRadius: 20,
+                          spreadRadius: 1,
+                        ),
                       ],
                     ),
+                    child: const ClipOval(
+                      child: Image(
+                        image: AssetImage('assets/images/logo.jpg'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   Text(
                     'Bienvenue chez\n$restaurantName',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   Text(
                     restaurantTagline,
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontStyle: FontStyle.italic,
+                        ),
                   ),
                   const Spacer(flex: 4),
                   ElevatedButton(
@@ -78,7 +89,7 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     child: const Text('Connexion / Inscription'),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   TextButton(
                     onPressed: () {
                       AppStateScope.of(context).continueAsGuest();

@@ -23,13 +23,14 @@ class _OrderModeSheetContentState extends State<_OrderModeSheetContent> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
           top: 12,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -39,10 +40,10 @@ class _OrderModeSheetContentState extends State<_OrderModeSheetContent> {
               child: Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 18),
                 decoration: BoxDecoration(
-                  color: AppColors.creamMuted.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(4),
+                  color: AppColors.creamMuted.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
             ),
@@ -51,33 +52,50 @@ class _OrderModeSheetContentState extends State<_OrderModeSheetContent> {
                 Expanded(
                   child: Text(
                     'CHOISISSEZ VOTRE MODE DE COMMANDE',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(letterSpacing: 0.4),
+                    style: textTheme.titleMedium?.copyWith(letterSpacing: 0.4),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Fermer',
-                  onPressed: () => Navigator.of(context).pop(),
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.close_rounded, color: AppColors.cream),
+                    tooltip: 'Fermer',
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             ...OrderMode.values.map((mode) {
               final isSelected = _selected == mode;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                   onTap: () => setState(() => _selected = mode),
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
                     padding: const EdgeInsets.all(16),
+                    constraints: const BoxConstraints(minHeight: 48),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.orange.withValues(alpha: 0.14) : AppColors.charcoalSoft,
-                      borderRadius: BorderRadius.circular(16),
+                      color: isSelected ? AppColors.surfaceAlt : AppColors.charcoalSoft,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                       border: Border.all(
-                        color: isSelected ? AppColors.orange : AppColors.creamMuted.withValues(alpha: 0.18),
+                        color: isSelected ? AppColors.orange : AppColors.divider,
                         width: isSelected ? 1.6 : 1,
                       ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.orangeDark.withValues(alpha: 0.22),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Row(
                       children: [
@@ -85,19 +103,19 @@ class _OrderModeSheetContentState extends State<_OrderModeSheetContent> {
                           width: 46,
                           height: 46,
                           decoration: BoxDecoration(
-                            color: AppColors.orange.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
+                            color: AppColors.orange.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
-                          child: Icon(mode.icon, color: AppColors.orange),
+                          child: Icon(mode.icon, color: AppColors.orange, size: 24),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(mode.label, style: Theme.of(context).textTheme.titleMedium),
+                              Text(mode.label, style: textTheme.titleMedium),
                               const SizedBox(height: 2),
-                              Text(mode.description, style: Theme.of(context).textTheme.bodySmall),
+                              Text(mode.description, style: textTheme.bodySmall),
                             ],
                           ),
                         ),
@@ -111,18 +129,21 @@ class _OrderModeSheetContentState extends State<_OrderModeSheetContent> {
                 ),
               );
             }),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _selected == null
-                  ? null
-                  : () {
-                      AppStateScope.of(context).setOrderMode(_selected!);
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Mode sélectionné : ${_selected!.label}')),
-                      );
-                    },
-              child: const Text('Valider'),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _selected == null
+                    ? null
+                    : () {
+                        AppStateScope.of(context).setOrderMode(_selected!);
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Mode sélectionné : ${_selected!.label}')),
+                        );
+                      },
+                child: const Text('Valider'),
+              ),
             ),
           ],
         ),

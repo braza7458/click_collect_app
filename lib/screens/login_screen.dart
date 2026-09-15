@@ -40,10 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close_rounded),
           tooltip: 'Fermer',
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -56,19 +57,22 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Connexion', style: Theme.of(context).textTheme.headlineLarge),
-                const SizedBox(height: 6),
+                Text('Connexion', style: textTheme.headlineLarge),
+                const SizedBox(height: 8),
                 Text(
                   'Accédez à votre compte fidélité et à vos commandes.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 32),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   autofillHints: const [AutofillHints.email],
-                  style: const TextStyle(color: AppColors.cream),
-                  decoration: const InputDecoration(labelText: 'E-mail'),
+                  style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
+                  decoration: const InputDecoration(
+                    labelText: 'E-mail',
+                    prefixIcon: Icon(Icons.mail_outline_rounded),
+                  ),
                   validator: (value) {
                     if (value == null || !value.contains('@')) {
                       return 'Entrez une adresse e-mail valide';
@@ -81,9 +85,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   autofillHints: const [AutofillHints.password],
-                  style: const TextStyle(color: AppColors.cream),
+                  style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
                   decoration: InputDecoration(
                     labelText: 'Mot de passe',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                       tooltip: _obscurePassword ? 'Afficher le mot de passe' : 'Masquer le mot de passe',
@@ -108,12 +113,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Mot de passe oublié ?'),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 ElevatedButton(
                   onPressed: _submit,
                   child: const Text('Connexion'),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).push(
@@ -121,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: RichText(
                       text: TextSpan(
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        style: textTheme.bodyMedium,
                         children: const [
                           TextSpan(text: 'Pas encore de compte ? '),
                           TextSpan(
