@@ -11,48 +11,21 @@ class SignupStep1Screen extends StatefulWidget {
 }
 
 class _SignupStep1ScreenState extends State<SignupStep1Screen> {
-  final _firstNameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  DateTime? _birthDate;
 
+  bool get _hasValidUsername => _usernameController.text.trim().length >= 3;
   bool get _hasMinLength => _passwordController.text.length >= 8;
   bool get _hasDigit => RegExp(r'\d').hasMatch(_passwordController.text);
   bool get _hasUppercase => RegExp(r'[A-Z]').hasMatch(_passwordController.text);
 
-  bool get _canContinue =>
-      _firstNameController.text.trim().isNotEmpty &&
-      _birthDate != null &&
-      _emailController.text.contains('@') &&
-      _hasMinLength &&
-      _hasDigit &&
-      _hasUppercase;
+  bool get _canContinue => _hasValidUsername && _hasMinLength && _hasDigit && _hasUppercase;
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickBirthDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(now.year - 25),
-      firstDate: DateTime(now.year - 100),
-      lastDate: now,
-    );
-    if (picked != null && mounted) {
-      setState(() => _birthDate = picked);
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month/${date.year}';
   }
 
   void _continue() {
@@ -60,8 +33,8 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SignupStep2Screen(
-          firstName: _firstNameController.text.trim(),
-          email: _emailController.text.trim(),
+          username: _usernameController.text.trim(),
+          password: _passwordController.text,
         ),
       ),
     );
@@ -101,37 +74,17 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Vos informations', style: textTheme.headlineMedium),
+                    Text('Créez votre compte', style: textTheme.headlineMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Juste un pseudo et un mot de passe — aucun e-mail, aucun numéro de téléphone.',
+                      style: textTheme.bodyMedium,
+                    ),
                     const SizedBox(height: 20),
                     TextField(
-                      controller: _firstNameController,
+                      controller: _usernameController,
                       style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
-                      decoration: const InputDecoration(labelText: 'Prénom'),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                    const SizedBox(height: 16),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      onTap: _pickBirthDate,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Date de naissance',
-                          suffixIcon: Icon(Icons.calendar_today_outlined, size: 22, color: AppColors.creamMuted),
-                        ),
-                        child: Text(
-                          _birthDate == null ? 'Sélectionner une date' : _formatDate(_birthDate!),
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: _birthDate == null ? AppColors.creamMuted.withValues(alpha: 0.6) : AppColors.cream,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
-                      decoration: const InputDecoration(labelText: 'E-mail'),
+                      decoration: const InputDecoration(labelText: 'Pseudo'),
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 16),
@@ -143,7 +96,8 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 14),
-                    _ValidationRow(label: 'Au minimum 8 caractères', valid: _hasMinLength),
+                    _ValidationRow(label: 'Pseudo : au moins 3 caractères', valid: _hasValidUsername),
+                    _ValidationRow(label: 'Mot de passe : au minimum 8 caractères', valid: _hasMinLength),
                     _ValidationRow(label: 'Au moins un chiffre', valid: _hasDigit),
                     _ValidationRow(label: 'Au moins une majuscule', valid: _hasUppercase),
                   ],

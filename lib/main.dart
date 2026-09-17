@@ -1,31 +1,45 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
+import 'config/stripe_config.dart';
+import 'firebase_options.dart';
 import 'screens/dashboard_shell.dart';
 import 'screens/welcome_screen.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (StripeConfig.isConfigured) {
+    Stripe.publishableKey = StripeConfig.publishableKey;
+    await Stripe.instance.applySettings();
+  }
   runApp(const ClickCollectApp());
 }
 
 class ClickCollectApp extends StatefulWidget {
-  const ClickCollectApp({super.key});
+  /// [appState] lets tests inject a pre-seeded state (e.g. with a menu
+  /// already set) instead of hitting the real Firestore backend.
+  const ClickCollectApp({super.key, AppState? appState}) : _injectedState = appState;
+
+  final AppState? _injectedState;
 
   @override
   State<ClickCollectApp> createState() => _ClickCollectAppState();
 }
 
 class _ClickCollectAppState extends State<ClickCollectApp> {
-  final _appState = AppState();
+  late final _appState = widget._injectedState ?? AppState();
   bool _loaded = false;
 
   @override
   void initState() {
     super.initState();
-    // Restores the locally saved session (login, points, cart…) before
-    // deciding whether to open on the welcome screen or the dashboard.
-    _appState.load().then((_) {
+    // Restores the locally saved session (login, points, cart…) and the
+    // shared catalog before deciding which screen to open on.
+    Future.wait([_appState.load(), _appState.loadCatalog()]).then((_) {
       if (mounted) setState(() => _loaded = true);
     });
   }

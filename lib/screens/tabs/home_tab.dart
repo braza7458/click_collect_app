@@ -22,7 +22,7 @@ class HomeTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Bonjour ${appState.firstName}', style: Theme.of(context).textTheme.headlineSmall),
+                  Text('Bonjour ${appState.username}', style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 4),
                   Text(
                     appState.isGuest
@@ -150,7 +150,7 @@ class HomeTab extends StatelessWidget {
           children: [
             const Icon(Icons.qr_code_2, size: 160, color: AppColors.orange),
             const SizedBox(height: 12),
-            Text(appState.isGuest ? 'Invité' : appState.firstName, style: Theme.of(dialogContext).textTheme.titleMedium),
+            Text(appState.isGuest ? 'Invité' : appState.username, style: Theme.of(dialogContext).textTheme.titleMedium),
             Text('${appState.points} points', style: Theme.of(dialogContext).textTheme.bodyMedium),
           ],
         ),

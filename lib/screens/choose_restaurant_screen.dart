@@ -28,8 +28,8 @@ class _ChooseRestaurantScreenState extends State<ChooseRestaurantScreen> {
     if (!_initialized) {
       _initialized = true;
       if (!widget.isOnboarding) {
-        final favorite = AppStateScope.of(context).favoriteRestaurantName;
-        final matches = restaurantLocations.where((r) => r.name == favorite);
+        final appState = AppStateScope.of(context);
+        final matches = appState.restaurants.where((r) => r.name == appState.favoriteRestaurantName);
         if (matches.isNotEmpty) _selected = matches.first;
       }
     }

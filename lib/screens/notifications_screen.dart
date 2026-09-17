@@ -51,26 +51,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             )
           else
             ...appState.notifications.map((n) => _NotificationTile(notification: n)),
-
-          const SizedBox(height: 24),
-          const Divider(height: 1),
-          const SizedBox(height: 16),
-          Text('PRÉFÉRENCES', style: textTheme.titleSmall?.copyWith(color: AppColors.creamMuted, letterSpacing: 1.0)),
-          const SizedBox(height: 4),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: appState.emailOptIn,
-            onChanged: (v) => appState.setOptIns(email: v, sms: appState.smsOptIn),
-            activeThumbColor: AppColors.orange,
-            title: Text('Offres par e-mail', style: textTheme.bodyLarge),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: appState.smsOptIn,
-            onChanged: (v) => appState.setOptIns(email: appState.emailOptIn, sms: v),
-            activeThumbColor: AppColors.orange,
-            title: Text('Offres par SMS', style: textTheme.bodyLarge),
-          ),
         ],
       ),
     );

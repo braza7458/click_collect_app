@@ -1,5 +1,8 @@
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -42,6 +45,13 @@ kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
+}
+
+dependencies {
+    // MainActivity is a FlutterFragmentActivity (flutter_stripe needs a
+    // FragmentActivity host), which requires AppCompat explicitly rather
+    // than relying on it being pulled in transitively.
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }
 
 flutter {

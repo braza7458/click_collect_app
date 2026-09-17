@@ -36,7 +36,7 @@ class OrderConfirmationScreen extends StatelessWidget {
               Text('Commande confirmée', textAlign: TextAlign.center, style: textTheme.headlineMedium),
               const SizedBox(height: 8),
               Text(
-                'Réglez-la sur place à la récupération.',
+                order.paid ? 'Votre paiement a bien été reçu.' : 'Réglez-la sur place à la récupération.',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium,
               ),

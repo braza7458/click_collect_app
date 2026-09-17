@@ -19,6 +19,24 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Some plugins (e.g. flutter_stripe's `stripe_android`) don't pin their own
+// Kotlin/Java compile targets, so they silently inherit whatever JDK Gradle
+// itself is running under for Kotlin while Android's own default stays put
+// for Java — on a machine with a newer JDK (25 here) that mismatch fails
+// the build ("Inconsistent JVM Target Compatibility"). Force every module,
+// plugins included, to the same JVM 17 target the app itself already uses.
+subprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }

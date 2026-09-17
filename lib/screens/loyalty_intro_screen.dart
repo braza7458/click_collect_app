@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../data/loyalty_data.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'dashboard_shell.dart';
 
@@ -10,6 +10,7 @@ class LoyaltyIntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final rewardTiers = AppStateScope.of(context).rewardTiers;
 
     return Scaffold(
       body: SafeArea(

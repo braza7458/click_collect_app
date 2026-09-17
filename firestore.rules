@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// Paste into Firebase Console → Firestore Database → Rules → Publish.
+//
+// menuCategories / restaurants / rewardTiers: public read (the app and
+// kiosk need them before anyone signs in), no client writes — for now the
+// menu is only edited by hand in the console, or by re-running
+// tool/seed_firestore.dart against temporarily-open rules.
+//
+// users/{uid}: only the owner can read or write their own profile — it only
+// ever holds a pseudo, a points balance and a favorite restaurant; no
+// e-mail or phone is stored on an account at all. KNOWN GAP: a client can
+// currently write its own `points` field directly (that's how redeemReward
+// / placeOrder update it, with no Cloud Function to validate them yet) — a
+// tampered client could inflate its own balance. Low stakes for now (no
+// money moves on points alone), but tighten this once a Cloud Function
+// owns point changes instead of the client.
+//
+// orders/{orderId}: anyone signed in (including the app's anonymous guest
+// sessions and the kiosk's/terminal's anonymous session) can create one.
+// Reading is normally restricted to the app user who placed the order — the
+// exception is a reception terminal (click_collect_terminal), whose
+// anonymous Firebase Auth uid has been granted a `staff: true` custom claim
+// via the `claimStaffTerminal` Cloud Function (see functions/index.js). A
+// claimed terminal can read every order (to display the incoming queue) and
+// update only its `status` field (confirmed → ready → completed) — nothing
+// else, so a compromised terminal can't rewrite totals or payment state.
+// Each order carries the phone number entered at checkout (`customerPhone`,
+// for that order's SMS updates only) — readable only by its owner or a
+// claimed terminal, same as the rest of the order.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /menuCategories/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /restaurants/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /rewardTiers/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /orders/{orderId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || request.auth.token.staff == true);
+      allow update: if request.auth != null && request.auth.token.staff == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

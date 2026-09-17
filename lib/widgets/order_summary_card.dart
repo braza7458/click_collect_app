@@ -54,6 +54,8 @@ class OrderSummaryCard extends StatelessWidget {
               _Chip(icon: order.mode.icon, label: order.mode.label),
               _Chip(icon: Icons.shopping_bag_outlined, label: '$itemCount article${itemCount > 1 ? 's' : ''}'),
               if (order.pointsEarned > 0) _Chip(icon: Icons.loyalty, label: '+${order.pointsEarned} pts'),
+              if (order.paid) _Chip(icon: Icons.check_circle_outline, label: 'Payée'),
+              if (order.appliedRewardLabel != null) _Chip(icon: Icons.card_giftcard, label: order.appliedRewardLabel!),
             ],
           ),
           if (order.fulfillmentDetail != null) ...[

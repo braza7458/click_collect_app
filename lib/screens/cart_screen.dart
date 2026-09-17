@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/loyalty_data.dart';
 import '../data/menu_data.dart';
 import '../data/restaurant_data.dart';
 import '../models/cart_line.dart';
@@ -7,6 +8,7 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/restaurant_picker_sheet.dart';
 import 'order_confirmation_screen.dart';
+import 'stripe_checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -21,7 +23,10 @@ class _CartScreenState extends State<CartScreen> {
   DateTime? _pickupTime;
   final _addressController = TextEditingController();
   final _tableController = TextEditingController();
+  final _phoneController = TextEditingController();
   bool _initialized = false;
+  bool _submitting = false;
+  RewardTier? _selectedReward;
 
   @override
   void didChangeDependencies() {
@@ -32,7 +37,7 @@ class _CartScreenState extends State<CartScreen> {
       _mode = appState.lastOrderMode ?? OrderMode.clickCollect;
       final favorite = appState.favoriteRestaurantName;
       if (favorite != null) {
-        final matches = restaurantLocations.where((r) => r.name == favorite);
+        final matches = appState.restaurants.where((r) => r.name == favorite);
         if (matches.isNotEmpty) _restaurant = matches.first;
       }
     }
@@ -42,6 +47,7 @@ class _CartScreenState extends State<CartScreen> {
   void dispose() {
     _addressController.dispose();
     _tableController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -115,6 +121,7 @@ class _CartScreenState extends State<CartScreen> {
 
   bool _canSubmit(AppState appState) {
     if (appState.cart.isEmpty) return false;
+    if (_phoneController.text.trim().isEmpty) return false;
     switch (_mode) {
       case OrderMode.clickCollect:
         return _restaurant != null && _restaurant!.isOpenNow && _pickupTime != null;
@@ -125,14 +132,35 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
-  void _submit(AppState appState) {
-    final order = appState.placeOrder(
+  String? get _orderRestaurantName =>
+      _mode == OrderMode.clickCollect ? _restaurant?.name : AppStateScope.of(context).favoriteRestaurantName;
+
+  Future<void> _payInStore(AppState appState) async {
+    setState(() => _submitting = true);
+    final order = await appState.placeOrder(
       mode: _mode,
-      restaurantName: _mode == OrderMode.clickCollect ? _restaurant?.name : appState.favoriteRestaurantName,
+      customerPhone: _phoneController.text.trim(),
+      restaurantName: _orderRestaurantName,
       fulfillmentDetail: _fulfillmentDetail,
+      reward: _selectedReward,
     );
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => OrderConfirmationScreen(order: order)),
+    );
+  }
+
+  void _payOnline() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => StripeCheckoutScreen(
+          mode: _mode,
+          customerPhone: _phoneController.text.trim(),
+          restaurantName: _orderRestaurantName,
+          fulfillmentDetail: _fulfillmentDetail,
+          reward: _selectedReward,
+        ),
+      ),
     );
   }
 
@@ -211,35 +239,63 @@ class _CartScreenState extends State<CartScreen> {
                   ),
 
                 const SizedBox(height: 24),
-                _SummaryCard(appState: appState),
+                Text('NUMÉRO DE TÉLÉPHONE', style: textTheme.titleSmall?.copyWith(color: AppColors.creamMuted, letterSpacing: 1.0)),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _phoneController,
+                  onChanged: (_) => setState(() {}),
+                  keyboardType: TextInputType.phone,
+                  style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
+                  decoration: const InputDecoration(
+                    labelText: 'Pour le SMS de confirmation',
+                    prefixIcon: Icon(Icons.sms_outlined),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Utilisé uniquement pour vous prévenir par SMS que la commande est confirmée puis prête — jamais enregistré sur votre compte.',
+                  style: textTheme.bodySmall,
+                ),
+                if (!appState.isGuest && appState.rewardTiers.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text('RÉCOMPENSE (FACULTATIF)', style: textTheme.titleSmall?.copyWith(color: AppColors.creamMuted, letterSpacing: 1.0)),
+                  const SizedBox(height: 10),
+                  _RewardPicker(
+                    tiers: appState.rewardTiers,
+                    points: appState.points,
+                    selected: _selectedReward,
+                    onSelected: (tier) => setState(() => _selectedReward = _selectedReward == tier ? null : tier),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                _SummaryCard(appState: appState, selectedReward: _selectedReward),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceAlt,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border(left: BorderSide(color: AppColors.orange, width: 3)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.info_outline, size: 18, color: AppColors.orange),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Le paiement en ligne arrive bientôt. Pour l\'instant, réglez sur place à la récupération de votre commande.',
-                          style: textTheme.bodySmall,
-                        ),
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 4),
+                Text(
+                  'Payez dès maintenant par carte, ou réglez sur place à la récupération de votre commande.',
+                  style: textTheme.bodySmall,
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _canSubmit(appState) ? () => _submit(appState) : null,
-                    child: Text('Commander · ${formatPrice(appState.cartTotal)} — paiement sur place'),
+                  child: ElevatedButton.icon(
+                    onPressed: _canSubmit(appState) && !_submitting ? _payOnline : null,
+                    icon: const Icon(Icons.credit_card, size: 20),
+                    label: Text('Payer ${formatPrice(appState.cartTotal)} par carte'),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _canSubmit(appState) && !_submitting ? () => _payInStore(appState) : null,
+                    child: _submitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Commander — payer sur place'),
                   ),
                 ),
               ],
@@ -461,9 +517,10 @@ class _StepperButton extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.appState});
+  const _SummaryCard({required this.appState, this.selectedReward});
 
   final AppState appState;
+  final RewardTier? selectedReward;
 
   @override
   Widget build(BuildContext context) {
@@ -484,6 +541,17 @@ class _SummaryCard extends StatelessWidget {
               Text(formatPrice(appState.cartTotal), style: textTheme.titleMedium),
             ],
           ),
+          if (selectedReward != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.card_giftcard, size: 16, color: AppColors.orange),
+                const SizedBox(width: 6),
+                Expanded(child: Text(selectedReward!.label, style: textTheme.bodySmall?.copyWith(color: AppColors.orange))),
+                Text('−${selectedReward!.points} pts', style: textTheme.bodySmall?.copyWith(color: AppColors.orange)),
+              ],
+            ),
+          ],
           const SizedBox(height: 6),
           Row(
             children: [
@@ -498,6 +566,70 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RewardPicker extends StatelessWidget {
+  const _RewardPicker({
+    required this.tiers,
+    required this.points,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<RewardTier> tiers;
+  final int points;
+  final RewardTier? selected;
+  final void Function(RewardTier) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      children: tiers.map((tier) {
+        final unlocked = points >= tier.points;
+        final isSelected = selected == tier;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            onTap: unlocked ? () => onSelected(tier) : null,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.orange.withValues(alpha: 0.12) : AppColors.charcoalSoft,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: isSelected ? AppColors.orange : AppColors.divider),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isSelected ? Icons.check_circle : (unlocked ? Icons.radio_button_unchecked : Icons.lock_outline),
+                    color: unlocked ? AppColors.orange : AppColors.creamMuted.withValues(alpha: 0.5),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      tier.label,
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: unlocked ? AppColors.cream : AppColors.creamMuted.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    unlocked ? '${tier.points} pts' : 'encore ${tier.points - points} pts',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: unlocked ? AppColors.creamMuted : AppColors.creamMuted.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

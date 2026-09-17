@@ -30,18 +30,20 @@ class _ItemOptionsSheetContentState extends State<_ItemOptionsSheetContent> {
   double get _basePrice =>
       widget.item.hasSizes ? widget.item.sizes[_sizeIndex].price : (widget.item.price ?? 0);
 
-  List<CartSupplement> get _supplements => bowlSupplements
+  List<CartSupplement> _supplements(List<MenuItem> bowlSupplements) => bowlSupplements
       .where((s) => _selectedSupplements.contains(s.name))
       .map((s) => CartSupplement(name: s.name, price: s.price!))
       .toList();
 
-  double get _unitTotal => _basePrice + _supplements.fold(0.0, (sum, s) => sum + s.price);
-  double get _total => _unitTotal * _quantity;
+  double _unitTotal(List<MenuItem> bowlSupplements) =>
+      _basePrice + _supplements(bowlSupplements).fold(0.0, (sum, s) => sum + s.price);
+  double _total(List<MenuItem> bowlSupplements) => _unitTotal(bowlSupplements) * _quantity;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final item = widget.item;
+    final bowlSupplements = AppStateScope.of(context).bowlSupplements;
 
     return SafeArea(
       child: Padding(
@@ -154,7 +156,7 @@ class _ItemOptionsSheetContentState extends State<_ItemOptionsSheetContent> {
                               itemName: item.name,
                               sizeLabel: item.hasSizes ? item.sizes[_sizeIndex].label : null,
                               unitPrice: _basePrice,
-                              supplements: _supplements,
+                              supplements: _supplements(bowlSupplements),
                               quantity: _quantity,
                             ),
                           );
@@ -164,7 +166,7 @@ class _ItemOptionsSheetContentState extends State<_ItemOptionsSheetContent> {
                           );
                         },
                   child: Text(
-                    item.isOrderable ? 'Ajouter · ${formatPrice(_total)}' : 'Bientôt disponible',
+                    item.isOrderable ? 'Ajouter · ${formatPrice(_total(bowlSupplements))}' : 'Bientôt disponible',
                   ),
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/restaurant_data.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 
 Future<RestaurantLocation?> showRestaurantPickerSheet(BuildContext context) {
@@ -46,7 +47,7 @@ Future<RestaurantLocation?> showRestaurantPickerSheet(BuildContext context) {
               ],
             ),
             const SizedBox(height: 8),
-            ...restaurantLocations.map(
+            ...AppStateScope.of(sheetContext).restaurants.map(
               (r) => ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(

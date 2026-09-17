@@ -10,23 +10,18 @@ class RestaurantLocation {
   final String address;
   final String hours;
   final bool isOpenNow;
-}
 
-const restaurantLocations = [
-  RestaurantLocation(
-    name: 'Les Poulets de Mamie — Centre Ville',
-    address: '12 Rue de la République',
-    hours: '11h30 - 21h30',
-  ),
-  RestaurantLocation(
-    name: 'Les Poulets de Mamie — Val Fleuri',
-    address: '48 Avenue du Val Fleuri',
-    hours: '11h30 - 22h00',
-  ),
-  RestaurantLocation(
-    name: 'Les Poulets de Mamie — Gare',
-    address: '3 Place de la Gare',
-    hours: '11h00 - 21h00',
-    isOpenNow: false,
-  ),
-];
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'address': address,
+        'hours': hours,
+        'isOpenNow': isOpenNow,
+      };
+
+  factory RestaurantLocation.fromMap(Map<String, dynamic> map) => RestaurantLocation(
+        name: map['name'] as String,
+        address: map['address'] as String,
+        hours: map['hours'] as String,
+        isOpenNow: map['isOpenNow'] as bool? ?? true,
+      );
+}

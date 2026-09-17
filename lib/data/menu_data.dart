@@ -5,6 +5,13 @@ class MenuItemSize {
 
   final String label;
   final double price;
+
+  Map<String, dynamic> toMap() => {'label': label, 'price': price};
+
+  factory MenuItemSize.fromMap(Map<String, dynamic> map) => MenuItemSize(
+        label: map['label'] as String,
+        price: (map['price'] as num).toDouble(),
+      );
 }
 
 class MenuItem {
@@ -48,6 +55,30 @@ class MenuItem {
     if (price == null) return 'Prix à définir';
     return isAddOn ? '+${formatPrice(price!)}' : formatPrice(price!);
   }
+
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'price': price,
+        'sizes': sizes.map((s) => s.toMap()).toList(),
+        'note': note,
+        'allowsSupplements': allowsSupplements,
+        'isAddOn': isAddOn,
+        'isInfoOnly': isInfoOnly,
+        'infoLabel': infoLabel,
+      };
+
+  factory MenuItem.fromMap(Map<String, dynamic> map) => MenuItem(
+        name: map['name'] as String,
+        price: (map['price'] as num?)?.toDouble(),
+        sizes: (map['sizes'] as List<dynamic>? ?? [])
+            .map((s) => MenuItemSize.fromMap(Map<String, dynamic>.from(s as Map)))
+            .toList(),
+        note: map['note'] as String?,
+        allowsSupplements: map['allowsSupplements'] as bool? ?? false,
+        isAddOn: map['isAddOn'] as bool? ?? false,
+        isInfoOnly: map['isInfoOnly'] as bool? ?? false,
+        infoLabel: map['infoLabel'] as String?,
+      );
 }
 
 class MenuCategory {
@@ -58,83 +89,21 @@ class MenuCategory {
 
   final String title;
   final List<MenuItem> items;
+
+  Map<String, dynamic> toMap() => {
+        'title': title,
+        'items': items.map((i) => i.toMap()).toList(),
+      };
+
+  // The kiosk's menu documents also carry an `icon` field (for its category
+  // rail) — this app doesn't use it, so it's simply ignored here.
+  factory MenuCategory.fromMap(Map<String, dynamic> map) => MenuCategory(
+        title: map['title'] as String,
+        items: (map['items'] as List<dynamic>? ?? [])
+            .map((i) => MenuItem.fromMap(Map<String, dynamic>.from(i as Map)))
+            .toList(),
+      );
 }
 
 const restaurantName = 'Les Poulets de Mamie';
 const restaurantTagline = 'Rôtisserie artisanale — Poulet Fermier Label Rouge';
-
-const menuCategories = [
-  MenuCategory(
-    title: 'Poulets rôtis',
-    items: [
-      MenuItem(name: 'Le Poulet Rôti', price: 20.50),
-      MenuItem(name: 'Le Demi-Poulet', price: 11.50),
-      MenuItem(name: 'La Cuisse de Dinde', price: 21.00),
-      MenuItem(name: 'Formule 1/4 de poulet + pomme de terre', price: 10.50),
-    ],
-  ),
-  MenuCategory(
-    title: 'Nos Bowls',
-    items: [
-      MenuItem(
-        name: 'Poulet Tandoori',
-        sizes: [MenuItemSize(label: 'M', price: 9.00), MenuItemSize(label: 'L', price: 10.50)],
-        allowsSupplements: true,
-      ),
-      MenuItem(
-        name: 'Curry Coco',
-        sizes: [MenuItemSize(label: 'M', price: 9.00), MenuItemSize(label: 'L', price: 10.50)],
-        allowsSupplements: true,
-      ),
-      // Prix non communiqué à ce jour — non commandable tant qu'il n'est pas confirmé.
-      MenuItem(
-        name: 'Crousty Cheddar',
-        note: 'Taille M / L — prix à confirmer',
-        allowsSupplements: true,
-      ),
-      MenuItem(
-        name: 'Crousty Tenders',
-        sizes: [MenuItemSize(label: 'M', price: 8.50), MenuItemSize(label: 'L', price: 10.00)],
-        allowsSupplements: true,
-      ),
-    ],
-  ),
-  MenuCategory(
-    title: 'Suppléments bowls',
-    items: [
-      MenuItem(name: 'Cheddar', price: 0.50, isAddOn: true),
-      MenuItem(name: 'Oignons crispy', price: 0.50, isAddOn: true),
-      MenuItem(name: 'Tenders', price: 1.50, isAddOn: true),
-      MenuItem(name: 'Poulet mariné', price: 1.50, isAddOn: true),
-    ],
-  ),
-  MenuCategory(
-    title: 'Accompagnements',
-    items: [
-      MenuItem(name: 'Barquette grande', price: 5.50),
-      MenuItem(name: 'Barquette petite', price: 4.00),
-      MenuItem(name: 'Haricots verts & pommes de terre', isInfoOnly: true, infoLabel: 'Inclus barquette'),
-      MenuItem(name: 'Frites maison', isInfoOnly: true, infoLabel: 'Inclus barquette'),
-      MenuItem(name: 'Riz pilaf', isInfoOnly: true, infoLabel: 'Inclus barquette'),
-    ],
-  ),
-  MenuCategory(
-    title: 'Spéciaux de la semaine',
-    items: [
-      MenuItem(name: 'Couscous', price: 11.50, note: 'Vendredi uniquement'),
-      MenuItem(name: 'Tajine', price: 11.50, note: 'Mercredi'),
-    ],
-  ),
-  MenuCategory(
-    title: 'Desserts & Boissons',
-    items: [
-      MenuItem(name: 'Tiramisu', price: 3.50),
-      // Prix non communiqué à ce jour — non commandable tant qu'il n'est pas confirmé.
-      MenuItem(name: 'Canette 33cl au choix', note: 'Prix à confirmer'),
-    ],
-  ),
-];
-
-/// The "Suppléments bowls" items, exposed flat for the bowl customization sheet.
-final List<MenuItem> bowlSupplements =
-    menuCategories.firstWhere((c) => c.title == 'Suppléments bowls').items;

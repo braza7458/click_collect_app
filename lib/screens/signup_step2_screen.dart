@@ -5,10 +5,10 @@ import '../theme/app_theme.dart';
 import 'choose_restaurant_screen.dart';
 
 class SignupStep2Screen extends StatefulWidget {
-  const SignupStep2Screen({super.key, required this.firstName, required this.email});
+  const SignupStep2Screen({super.key, required this.username, required this.password});
 
-  final String firstName;
-  final String email;
+  final String username;
+  final String password;
 
   @override
   State<SignupStep2Screen> createState() => _SignupStep2ScreenState();
@@ -16,14 +16,28 @@ class SignupStep2Screen extends StatefulWidget {
 
 class _SignupStep2ScreenState extends State<SignupStep2Screen> {
   bool _acceptedTerms = false;
-  bool _emailOptIn = true;
-  bool _smsOptIn = false;
+  bool _submitting = false;
+  String? _errorMessage;
 
-  void _validate() {
+  Future<void> _validate() async {
     if (!_acceptedTerms) return;
+    setState(() {
+      _submitting = true;
+      _errorMessage = null;
+    });
     final appState = AppStateScope.of(context);
-    appState.loginAs(widget.firstName, points: 0, email: widget.email);
-    appState.setOptIns(email: _emailOptIn, sms: _smsOptIn);
+    final result = await appState.signUp(
+      username: widget.username,
+      password: widget.password,
+    );
+    if (!mounted) return;
+    if (!result.isSuccess) {
+      setState(() {
+        _submitting = false;
+        _errorMessage = result.errorMessage;
+      });
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const ChooseRestaurantScreen()),
     );
@@ -123,16 +137,10 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                       title: 'J\'accepte les Conditions Générales d\'Utilisation et la Politique de confidentialité',
                       required: true,
                     ),
-                    _ConsentCheckbox(
-                      value: _emailOptIn,
-                      onChanged: (v) => setState(() => _emailOptIn = v),
-                      title: 'Je souhaite recevoir les offres par e-mail',
-                    ),
-                    _ConsentCheckbox(
-                      value: _smsOptIn,
-                      onChanged: (v) => setState(() => _smsOptIn = v),
-                      title: 'Je souhaite recevoir les offres par SMS',
-                    ),
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Text(_errorMessage!, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.red)),
+                    ],
                   ],
                 ),
               ),
@@ -140,8 +148,14 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: ElevatedButton(
-                onPressed: _acceptedTerms ? _validate : null,
-                child: const Text('Je valide mon inscription'),
+                onPressed: _acceptedTerms && !_submitting ? _validate : null,
+                child: _submitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.charcoal),
+                      )
+                    : const Text('Je valide mon inscription'),
               ),
             ),
           ],

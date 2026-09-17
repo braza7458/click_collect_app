@@ -34,7 +34,8 @@ class MoreTab extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      AppStateScope.of(context).logout();
+      await AppStateScope.of(context).logout();
+      if (!context.mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const WelcomeScreen()),
         (route) => false,
@@ -78,7 +79,7 @@ class MoreTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      appState.isGuest ? 'Invité' : appState.firstName,
+                      appState.isGuest ? 'Invité' : appState.username,
                       style: textTheme.titleMedium,
                     ),
                     const SizedBox(height: 2),

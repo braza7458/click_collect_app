@@ -14,24 +14,37 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _submitting = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final namePart = _emailController.text.split('@').first;
-    final displayName = namePart.isEmpty
-        ? 'Client'
-        : namePart[0].toUpperCase() + namePart.substring(1);
-    AppStateScope.of(context).loginAs(displayName, email: _emailController.text.trim());
+    setState(() {
+      _submitting = true;
+      _errorMessage = null;
+    });
+    final result = await AppStateScope.of(context).signIn(
+      username: _usernameController.text.trim(),
+      password: _passwordController.text,
+    );
+    if (!mounted) return;
+    if (!result.isSuccess) {
+      setState(() {
+        _submitting = false;
+        _errorMessage = result.errorMessage;
+      });
+      return;
+    }
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const DashboardShell()),
       (route) => false,
@@ -65,17 +78,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
+                  controller: _usernameController,
+                  autofillHints: const [AutofillHints.username],
                   style: textTheme.bodyLarge?.copyWith(color: AppColors.cream),
                   decoration: const InputDecoration(
-                    labelText: 'E-mail',
-                    prefixIcon: Icon(Icons.mail_outline_rounded),
+                    labelText: 'Pseudo',
+                    prefixIcon: Icon(Icons.person_outline_rounded),
                   ),
                   validator: (value) {
-                    if (value == null || !value.contains('@')) {
-                      return 'Entrez une adresse e-mail valide';
+                    if (value == null || value.trim().length < 3) {
+                      return 'Entrez votre pseudo (3 caractères minimum)';
                     }
                     return null;
                   },
@@ -102,21 +114,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Un lien de réinitialisation vous a été envoyé par e-mail.')),
-                      );
-                    },
-                    child: const Text('Mot de passe oublié ?'),
-                  ),
+                const SizedBox(height: 6),
+                Text(
+                  'Pas d\'e-mail ni de téléphone associé au compte : en cas d\'oubli, il faudra en recréer un.',
+                  style: textTheme.bodySmall,
                 ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(_errorMessage!, style: textTheme.bodySmall?.copyWith(color: AppColors.red)),
+                ],
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Connexion'),
+                  onPressed: _submitting ? null : _submit,
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.charcoal),
+                        )
+                      : const Text('Connexion'),
                 ),
                 const SizedBox(height: 24),
                 Center(

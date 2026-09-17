@@ -19,6 +19,11 @@ class _OrderTabState extends State<OrderTab> {
   @override
   Widget build(BuildContext context) {
     final appState = AppStateScope.of(context);
+    final categories = appState.menuCategories;
+    if (categories.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final selected = _selectedCategory.clamp(0, categories.length - 1);
     return Stack(
       children: [
         CustomScrollView(
@@ -36,17 +41,18 @@ class _OrderTabState extends State<OrderTab> {
             ),
             SliverToBoxAdapter(
               child: _CategoryChips(
-                selected: _selectedCategory,
+                categories: categories,
+                selected: selected,
                 onSelected: (i) => setState(() => _selectedCategory = i),
               ),
             ),
             SliverPadding(
               padding: EdgeInsets.fromLTRB(20, 8, 20, appState.cart.isEmpty ? 24 : 100),
               sliver: SliverList.separated(
-                itemCount: menuCategories[_selectedCategory].items.length,
+                itemCount: categories[selected].items.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, i) => _MenuTile(
-                  item: menuCategories[_selectedCategory].items[i],
+                  item: categories[selected].items[i],
                 ),
               ),
             ),
@@ -110,8 +116,9 @@ class _CartIconButton extends StatelessWidget {
 }
 
 class _CategoryChips extends StatelessWidget {
-  const _CategoryChips({required this.selected, required this.onSelected});
+  const _CategoryChips({required this.categories, required this.selected, required this.onSelected});
 
+  final List<MenuCategory> categories;
   final int selected;
   final ValueChanged<int> onSelected;
 
@@ -122,12 +129,12 @@ class _CategoryChips extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        itemCount: menuCategories.length,
+        itemCount: categories.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           final isSelected = i == selected;
           return ChoiceChip(
-            label: Text(menuCategories[i].title),
+            label: Text(categories[i].title),
             selected: isSelected,
             onSelected: (_) => onSelected(i),
             selectedColor: AppColors.orange,

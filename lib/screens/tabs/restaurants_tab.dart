@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/restaurant_data.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 
 Future<void> _openItinerary(BuildContext context, RestaurantLocation restaurant) async {
@@ -21,15 +22,19 @@ class RestaurantsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final restaurants = AppStateScope.of(context).restaurants;
+    if (restaurants.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-      itemCount: restaurantLocations.length + 1,
+      itemCount: restaurants.length + 1,
       separatorBuilder: (_, _) => const SizedBox(height: 16),
       itemBuilder: (context, i) {
         if (i == 0) {
           return Text('Nos restaurants', style: textTheme.headlineSmall);
         }
-        final restaurant = restaurantLocations[i - 1];
+        final restaurant = restaurants[i - 1];
         final statusColor = restaurant.isOpenNow ? AppColors.green : AppColors.red;
         return Container(
           padding: const EdgeInsets.all(18),
