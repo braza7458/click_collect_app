@@ -432,6 +432,18 @@
 // 7. HISTORIQUE DES SESSIONS (la plus récente en premier)
 // =====================================================================
 //
+// --- 01/10/2026 (4e session) ---
+// - Crousty Cheddar : prix UNIQUE 8,50 € (plus de tailles M/L), demandé par
+//   Ibrahim. Firestore mis à jour via tool/seed_firestore.dart (règles
+//   ouvertes ~1 min sur le catalogue puis RESTAURÉES, écriture non
+//   authentifiée vérifiée refusée : HTTP 403). Le seed a aussi poussé le
+//   restaurant unique + horaires et supprimé restaurant-1/restaurant-2 →
+//   le point "pousser les données dans Firestore" de PROCHAINE ÉTAPE est FAIT.
+// - Affiches "Commandez en ligne" avec QR code vers
+//   https://les-poulets-de-mamie.web.app : C:\Desktop\isnadffiches//   (generer_affiches.py → sortie/ : PDF mur A2, comptoir A4, table A6 +
+//   aperçus PNG ; QR codes vérifiés lisibles). Hors dépôt git.
+// - Les 3 sites web redéployés.
+//
 // --- 01/10/2026 (3e session) ---
 // - Les 3 apps mises en ligne (voir liens section 1). Lien testé EN LIGNE :
 //   commande passée sur la borne web → apparue sur le terminal avec

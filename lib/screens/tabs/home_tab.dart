@@ -345,7 +345,7 @@ const _features = [
     image: 'assets/images/tasty_cheddar.jpg',
     tag: 'Nouveau',
     title: 'Crousty Cheddar',
-    subtitle: 'Bowl M 8,50 € · L 10,00 €',
+    subtitle: 'Bowl · 8,50 €',
   ),
   _Feature(
     image: 'assets/images/tajine.jpg',

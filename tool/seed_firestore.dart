@@ -148,11 +148,8 @@ final _menuCategories = [
       },
       {
         'name': 'Crousty Cheddar',
-        'price': null,
-        'sizes': [
-          {'label': 'M', 'price': 8.50},
-          {'label': 'L', 'price': 10.00},
-        ],
+        'price': 8.50,
+        'sizes': [],
         'note': null,
         'allowsSupplements': true,
         'isAddOn': false,
