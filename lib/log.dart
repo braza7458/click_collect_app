@@ -91,6 +91,23 @@
 //     l'écran d'accueil borne — mis à false dans les tests, sinon
 //     pumpAndSettle ne finit jamais).
 //
+// EN LIGNE (Firebase Hosting, même projet → les 3 apps restent reliées
+// par Firestore) — version web de TEST :
+//   - App client  : https://les-poulets-de-mamie.web.app
+//   - Borne       : https://poulets-de-mamie-borne.web.app
+//   - Terminal    : https://poulets-de-mamie-terminal.web.app
+// Déploiement : dans chaque dossier, `flutter build web --release
+// --no-tree-shake-icons` puis `firebase deploy --only hosting --project
+// les-poulets-de-mamie` (kiosk/terminal ont leur "site" dans firebase.json).
+// Différences web : pas de paiement carte (le PaymentSheet Stripe n'existe
+// pas sur le web) → app "payer sur place", bornes "payer en caisse". Le
+// terminal web demande le code équipe à l'ouverture (droits staff + bip de
+// test qui autorise le son dans le navigateur — _WebReceptionGate dans
+// main.dart). ⚠️ Le code équipe (1957) est dans le code de la page :
+// suffisant pour des tests entre amis, à durcir avant une vraie mise en
+// service (sinon quiconque a le lien et lit le code peut voir les commandes
+// et numéros de téléphone).
+//
 // GitHub (compte braza7458, branche main, collaborateur Ryad) :
 //   - https://github.com/braza7458/click_collect_app
 //   - https://github.com/braza7458/click_collect_terminal
@@ -414,6 +431,17 @@
 // =====================================================================
 // 7. HISTORIQUE DES SESSIONS (la plus récente en premier)
 // =====================================================================
+//
+// --- 01/10/2026 (3e session) ---
+// - Les 3 apps mises en ligne (voir liens section 1). Lien testé EN LIGNE :
+//   commande passée sur la borne web → apparue sur le terminal avec
+//   l'alarme (2 fois). App web : même écriture Firestore que l'app Android
+//   (non testée en commande réelle car elle exige un vrai numéro et
+//   enverrait un SMS).
+// - Terminal : fausse alarme au démarrage corrigée (le cache local arrivait
+//   avant le serveur) ; numéro de commande qui ne rétrécit plus.
+// - ⚠️ 2 commandes de TEST "Le Demi-Poulet" (borne, 11,50 €) ajoutées dans
+//   Firestore pendant le test : à passer en "Récupérée".
 //
 // --- 01/10/2026 (2e session) ---
 // - 18 photos de plats générées avec Gemini et installées dans les 3 apps

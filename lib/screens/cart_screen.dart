@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../data/loyalty_data.dart';
@@ -273,12 +274,24 @@ class _CartScreenState extends State<CartScreen> {
                 const SizedBox(height: 26),
                 _SummaryCard(appState: appState, selectedReward: _selectedReward),
                 const SizedBox(height: 18),
-                GlowButton(
-                  icon: Icons.credit_card_rounded,
-                  label: 'Payer ${formatPrice(appState.cartTotal)} par carte',
-                  onPressed: canSubmit ? _payOnline : null,
-                ),
-                const SizedBox(height: 10),
+                // Version web (test en ligne) : pas de paiement carte natif.
+                if (kIsWeb)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      "Version web : le paiement par carte est disponible dans l'application Android. Ici, commandez et réglez sur place.",
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodySmall,
+                    ),
+                  )
+                else ...[
+                  GlowButton(
+                    icon: Icons.credit_card_rounded,
+                    label: 'Payer ${formatPrice(appState.cartTotal)} par carte',
+                    onPressed: canSubmit ? _payOnline : null,
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 SizedBox(
                   height: 54,
                   child: OutlinedButton(

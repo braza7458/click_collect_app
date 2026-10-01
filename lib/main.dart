@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
@@ -13,7 +14,9 @@ import 'widgets/ui.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  if (StripeConfig.isConfigured) {
+  // Sur le web (version de test en ligne), le PaymentSheet natif de Stripe
+  // n'existe pas : pas d'initialisation, et le paiement se fait sur place.
+  if (StripeConfig.isConfigured && !kIsWeb) {
     Stripe.publishableKey = StripeConfig.publishableKey;
     await Stripe.instance.applySettings();
   }
