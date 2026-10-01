@@ -70,6 +70,8 @@ class _StripeCheckoutScreenState extends State<StripeCheckoutScreen> {
           billingDetailsCollectionConfiguration: const BillingDetailsCollectionConfiguration(
             address: AddressCollectionMode.never,
           ),
+          // Carte uniquement : pas de bouton "Pay with Link".
+          linkDisplayParams: const LinkDisplayParams(linkDisplay: LinkDisplay.never),
         ),
       );
       await Stripe.instance.presentPaymentSheet();

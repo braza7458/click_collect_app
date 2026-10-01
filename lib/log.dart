@@ -21,7 +21,7 @@
 //      jour aussi — ce fichier doit toujours refléter l'état réel du code,
 //      pas un instantané périmé.
 //
-// Dernière mise à jour : 1er octobre 2026.
+// Dernière mise à jour : 1er octobre 2026 (2e session du jour).
 //
 // =====================================================================
 // 1. VUE D'ENSEMBLE
@@ -223,9 +223,25 @@
 //
 // Assets (pubspec.yaml) : logo.jpg, menu.jpeg, fond.jpg, fond_flou.jpg
 // (généré depuis fond.jpg : 540 px, flou gaussien 18, luminosité 0,55),
-// tasty_cheddar.jpg, tajine.jpg, poulet.jpg (recadrage du poulet de
-// fond.jpg, vignette des poulets rôtis). Les mêmes images sont copiées dans
-// click_collect_terminal et click_collect_kiosk.
+// tasty_cheddar.jpg, tajine.jpg (photos fournies par le restaurant) et
+// assets/images/produits/ : 18 photos de plats GÉNÉRÉES AVEC GEMINI
+// (gemini-3-pro-image-preview, 640×640, même style : table en bois sombre,
+// lumière chaude) — poulet_roti, demi_poulet, cuisse_dinde, formule_quart,
+// bowl_tandoori, bowl_curry_coco, crousty_tenders, sup_cheddar, sup_oignons,
+// sup_tenders, sup_poulet_marine, barquette, haricots_pdt, frites,
+// riz_pilaf, couscous, tiramisu, canette. Le lien nom du plat → photo est
+// dans menuItemImage() (widgets/menu_visuals.dart ici, widgets/menu_icons.dart
+// dans le kiosk et le terminal — même liste de mots-clés, à garder
+// synchronisée). Pour un nouveau plat : ajouter la photo dans produits/ des
+// 3 apps + une ligne dans _productImages. Mêmes images dans les 3 apps.
+//
+// Comptes liés entre les 3 apps : un compte = pseudo + mot de passe Firebase
+// Auth + users/{uid}. Les commandes passées sur la borne avec ce compte ont
+// userId = uid (elles apparaissent dans "Mes commandes", OrderMode dineIn /
+// takeaway, titre "Ticket borne n° X") ; les points gagnés sur la borne
+// arrivent en direct dans l'app (AppState écoute users/{uid},
+// UserRepository.watchProfile). Les commandes portent `customerName`
+// (pseudo) pour que la réception affiche le client.
 //
 // Tests : test/widget_test.dart (6 tests : accueil, ajout au panier,
 // paiement carte qui échoue proprement hors Firebase, commande sur place
@@ -311,6 +327,23 @@
 //     dépendance androidx.appcompat, meta-data Google Pay (comme le
 //     terminal) — nécessaires à flutter_stripe.
 //   - tool/borne_demo.dart → démo hors ligne (carte fictive, sans Firebase).
+//   - FIDÉLITÉ (depuis le 01/10/2026, 2e session) : services/loyalty_service.dart
+//     connecte le client sur une SECONDE instance Firebase nommée "loyalty"
+//     (la session anonyme de la borne reste intacte) avec les MÊMES comptes
+//     que l'app (pseudoEmailFor identique), ou crée un compte. Le client se
+//     connecte depuis le panier ("Compte fidélité : me connecter") ou le
+//     récapitulatif (widgets/loyalty_dialog.dart : LoyaltyPanel), voit son
+//     solde, gagne 1 point / € et peut échanger une récompense (rewardTiers).
+//     KioskState.placeOrder écrit userId/customerName/pointsEarned/
+//     appliedRewardLabel sur la commande puis met à jour users/{uid}.points
+//     (transaction, délai max 8 s). Déconnexion automatique à la fin de la
+//     commande (resetSession). Mêmes fichiers dans le mode Borne du terminal.
+//   - PAIEMENT CORRIGÉ : initPaymentSheet recevait un paramètre applePay sans
+//     Apple merchantIdentifier → assertion flutter_stripe, le formulaire ne
+//     s'ouvrait jamais ("Le paiement a échoué"). Paramètre retiré, Link
+//     masqué (LinkDisplay.never, aussi dans l'app), l'erreur réelle est
+//     maintenant affichée et loguée. Vérifié sur émulateur Android : paiement
+//     test 4242… réussi jusqu'au ticket.
 //
 // Tests : test/widget_test.dart (2 tests, écran 1280×800).
 //
@@ -382,6 +415,18 @@
 // 7. HISTORIQUE DES SESSIONS (la plus récente en premier)
 // =====================================================================
 //
+// --- 01/10/2026 (2e session) ---
+// - 18 photos de plats générées avec Gemini et installées dans les 3 apps
+//   (carte, fiche plat, suppléments).
+// - Fidélité sur la borne (et le mode Borne du terminal), mêmes comptes que
+//   l'app ; points synchronisés en direct dans l'app ; commandes borne du
+//   client dans "Mes commandes" ; pseudo du client affiché en réception.
+// - Paiement de la borne réparé (paramètre Apple Pay fautif, voir section 4)
+//   et testé sur émulateur. ⚠️ Ce test a créé une vraie commande de TEST
+//   dans Firestore (ticket borne n° 1, 20,50 €, payée en mode test Stripe) :
+//   la passer en "Récupérée" depuis la réception.
+// - Petits débordements corrigés sur les écrans de borne de petite taille.
+//
 // --- 01/10/2026 ---
 // - Les 11 tâches de la session du 17/09 implémentées (app 1 à 9,
 //   terminal 1 et 2) — détail dans les sections 2 et 3 :
@@ -450,7 +495,10 @@
 //    Firestore n'a pas le nouveau format), MAIS le Crousty Cheddar reste
 //    "Prix à définir" (non commandable) dans l'app et les bornes tant que
 //    menuCategories n'est pas mis à jour.
-// 2) Tester sur les vrais appareils : app Android (fond, horaires,
+// 2) Fidélité borne à tester avec un vrai compte sur la tablette (connexion,
+//    points gagnés, récompense, puis vérifier dans l'app "Mes commandes" et
+//    le solde). Pas testable par Claude (il ne saisit pas de mots de passe).
+// 2 bis) Tester sur les vrais appareils : app Android (fond, horaires,
 //    "Mes commandes" en direct), terminal en mode Réception (une commande
 //    passée sur la borne doit sonner et apparaître avec le badge BORNE),
 //    paiement Stripe sur la borne.

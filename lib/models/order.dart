@@ -37,6 +37,9 @@ class Order {
     this.userId,
     this.customerPhone,
     this.appliedRewardLabel,
+    this.customerName,
+    this.source = 'app',
+    this.ticketNumber,
   });
 
   final String id;
@@ -67,6 +70,20 @@ class Order {
   /// to the account (see [AppState]'s class doc).
   final String? customerPhone;
 
+  /// Pseudo du compte fidélité — affiché sur le terminal de réception.
+  final String? customerName;
+
+  /// 'app' ou 'kiosk' (commande passée sur la borne avec son compte).
+  final String source;
+
+  /// Numéro de ticket de la borne.
+  final int? ticketNumber;
+
+  bool get isFromKiosk => source == 'kiosk';
+
+  /// "Commande #K3F9A" ou "Ticket borne n° 12".
+  String get displayTitle => isFromKiosk ? 'Ticket borne n° ${ticketNumber ?? '?'}' : 'Commande #$id';
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'date': date.toIso8601String(),
@@ -81,7 +98,9 @@ class Order {
         'userId': userId,
         'customerPhone': customerPhone,
         'appliedRewardLabel': appliedRewardLabel,
-        'source': 'app',
+        'customerName': customerName,
+        'source': source,
+        if (ticketNumber != null) 'number': ticketNumber,
       };
 
   factory Order.fromJson(Map<String, dynamic> json) => Order(
@@ -100,5 +119,8 @@ class Order {
         userId: json['userId'] as String?,
         customerPhone: json['customerPhone'] as String?,
         appliedRewardLabel: json['appliedRewardLabel'] as String?,
+        customerName: json['customerName'] as String?,
+        source: json['source'] as String? ?? 'app',
+        ticketNumber: (json['number'] as num?)?.toInt(),
       );
 }

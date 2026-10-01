@@ -48,7 +48,7 @@ class _ItemOptionsSheetContentState extends State<_ItemOptionsSheetContent> {
     final textTheme = Theme.of(context).textTheme;
     final item = widget.item;
     final bowlSupplements = AppStateScope.of(context).bowlSupplements;
-    final image = menuItemImage(item.name, categoryKey: widget.categoryKey);
+    final image = menuItemImage(item.name);
 
     return SafeArea(
       child: ConstrainedBox(
@@ -117,7 +117,9 @@ class _ItemOptionsSheetContentState extends State<_ItemOptionsSheetContent> {
                                 }),
                                 avatar: _selectedSupplements.contains(s.name)
                                     ? const Icon(Icons.check_rounded, size: 18, color: AppColors.charcoal)
-                                    : null,
+                                    : (menuItemImage(s.name) != null
+                                        ? CircleAvatar(backgroundImage: AssetImage(menuItemImage(s.name)!))
+                                        : null),
                                 label: Text('${s.name}  ${s.priceLabel}'),
                                 labelStyle: textTheme.labelLarge?.copyWith(
                                   color: _selectedSupplements.contains(s.name) ? AppColors.charcoal : AppColors.cream,

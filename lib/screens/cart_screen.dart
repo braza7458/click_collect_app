@@ -32,7 +32,8 @@ class _CartScreenState extends State<CartScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      _mode = AppStateScope.of(context).lastOrderMode ?? OrderMode.clickCollect;
+      final last = AppStateScope.of(context).lastOrderMode;
+      _mode = OrderMode.appModes.contains(last) ? last! : OrderMode.clickCollect;
     }
   }
 
@@ -110,6 +111,8 @@ class _CartScreenState extends State<CartScreen> {
       case OrderMode.tableService:
         final table = _tableController.text.trim();
         return table.isEmpty ? null : 'Table n° $table';
+      case OrderMode.dineIn || OrderMode.takeaway:
+        return null; // modes de la borne, jamais choisis ici
     }
   }
 
@@ -126,6 +129,8 @@ class _CartScreenState extends State<CartScreen> {
       case OrderMode.tableService:
         if (!_restaurant.isOpenNow) return 'Le service à table n\'est possible que pendant les heures d\'ouverture.';
         if (_tableController.text.trim().isEmpty) return 'Indiquez votre numéro de table.';
+      case OrderMode.dineIn || OrderMode.takeaway:
+        break;
     }
     if (_phoneController.text.trim().isEmpty) return 'Indiquez un numéro de téléphone pour le SMS.';
     return null;
@@ -409,7 +414,7 @@ class _ModeSelector extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return Row(
       children: [
-        for (final mode in OrderMode.values) ...[
+        for (final mode in OrderMode.appModes) ...[
           if (mode.index > 0) const SizedBox(width: 8),
           Expanded(
             child: Pressable(

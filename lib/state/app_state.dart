@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -83,6 +84,31 @@ class AppState extends ChangeNotifier {
 
   final FirebaseAuth _auth;
 
+  /// Écoute en direct de users/{uid} (points mis à jour par la borne).
+  StreamSubscription<Map<String, dynamic>?>? _profileSub;
+
+  void _watchProfile(String uid) {
+    _profileSub?.cancel();
+    try {
+      _profileSub = UserRepository.watchProfile(uid).listen((data) {
+        if (data == null || isGuest) return;
+        final livePoints = (data['points'] as num?)?.toInt();
+        if (livePoints != null && livePoints != points) {
+          points = livePoints;
+          notifyListeners();
+        }
+      }, onError: (_) {});
+    } catch (_) {
+      // Firestore indisponible (tests, hors ligne) — pas de suivi en direct.
+    }
+  }
+
+  @override
+  void dispose() {
+    _profileSub?.cancel();
+    super.dispose();
+  }
+
   String username = '';
   bool isGuest = false;
   int points = 0;
@@ -158,6 +184,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _loadUserProfile(String uid) async {
+    _watchProfile(uid);
     try {
       final data = await UserRepository.fetchProfile(uid);
       if (data != null) {
@@ -178,7 +205,7 @@ class AppState extends ChangeNotifier {
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       final modeName = json['lastOrderMode'] as String?;
-      lastOrderMode = modeName == null ? null : OrderMode.values.byName(modeName);
+      lastOrderMode = modeName == null ? null : OrderMode.values.asNameMap()[modeName];
       cart = (json['cart'] as List<dynamic>? ?? [])
           .map((l) => CartLine.fromJson(l as Map<String, dynamic>))
           .toList();
@@ -219,6 +246,7 @@ class AppState extends ChangeNotifier {
       }
       this.username = username;
       points = 0;
+      _watchProfile(newUid);
       isGuest = false;
       orderHistory = [];
       notifyListeners();
@@ -355,6 +383,7 @@ class AppState extends ChangeNotifier {
       paid: paid,
       userId: currentUid,
       customerPhone: customerPhone,
+      customerName: isGuest ? null : username,
       appliedRewardLabel: appliedReward?.label,
     );
     final netPoints = earned - redeemed;
@@ -441,6 +470,8 @@ class AppState extends ChangeNotifier {
     cart = [];
     orderHistory = [];
     notifications = [];
+    await _profileSub?.cancel();
+    _profileSub = null;
     _persistLocal();
     notifyListeners();
     await _auth.signOut();

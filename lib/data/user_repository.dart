@@ -18,6 +18,11 @@ class UserRepository {
   static Future<void> updateProfile(String uid, Map<String, dynamic> data) =>
       FirebaseFirestore.instance.collection('users').doc(uid).set(data, SetOptions(merge: true));
 
+  /// Suit le profil en direct : les points gagnés sur la BORNE (avec le même
+  /// compte) apparaissent tout de suite dans l'application.
+  static Stream<Map<String, dynamic>?> watchProfile(String uid) =>
+      FirebaseFirestore.instance.collection('users').doc(uid).snapshots().map((s) => s.data());
+
   /// Atomically adds [delta] to the user's point balance (negative to
   /// spend) and returns the resulting balance.
   static Future<int> adjustPoints(String uid, int delta) {

@@ -43,7 +43,7 @@ class OrderSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Commande #${order.id}', style: textTheme.titleMedium),
+                    Text(order.displayTitle, style: textTheme.titleMedium),
                     const SizedBox(height: 2),
                     Text(formatOrderDate(order.date), style: textTheme.bodySmall),
                   ],

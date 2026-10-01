@@ -85,7 +85,8 @@ flutter:
     - assets/images/fond_flou.jpg
     - assets/images/tasty_cheddar.jpg
     - assets/images/tajine.jpg
-    - assets/images/poulet.jpg
+    # Photos des plats (générées avec Gemini), une par produit de la carte.
+    - assets/images/produits/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

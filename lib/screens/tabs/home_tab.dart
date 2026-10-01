@@ -149,7 +149,7 @@ class HomeTab extends StatelessWidget {
               const SizedBox(height: 18),
               Text(appState.username, style: textTheme.titleLarge),
               const SizedBox(height: 4),
-              Text('${appState.points} points · présentez ce code en caisse', style: textTheme.bodySmall),
+              Text('${appState.points} points · à la borne, connectez-vous avec votre pseudo', style: textTheme.bodySmall),
             ],
           ),
         ),

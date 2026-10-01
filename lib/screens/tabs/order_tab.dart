@@ -203,7 +203,7 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final image = menuItemImage(item.name, categoryKey: iconKey);
+    final image = menuItemImage(item.name);
     return Opacity(
       opacity: item.isOrderable || item.isInfoOnly ? 1 : 0.55,
       child: GlassCard(
