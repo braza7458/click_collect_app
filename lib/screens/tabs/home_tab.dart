@@ -1,314 +1,272 @@
 import 'package:flutter/material.dart';
 
+import '../../data/restaurant_data.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/help_dialog.dart';
+import '../../widgets/ui.dart';
+import '../login_screen.dart';
 
+/// Onglet "Pour vous" : l'accueil.
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.onNavigate});
 
+  /// Index des onglets : 0 accueil, 1 restaurant, 2 commander, 3 fidélité, 4 plus.
   final ValueChanged<int> onNavigate;
+
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 5 || h >= 18) return 'Bonsoir';
+    return 'Bonjour';
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = AppStateScope.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    final restaurant = appState.restaurant;
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Bonjour ${appState.username}', style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 4),
-                  Text(
-                    appState.isGuest
-                        ? 'Connectez-vous pour cumuler des points'
-                        : 'Vous avez ${appState.points} points',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => _showMemberCard(context, appState),
-              icon: const Icon(Icons.qr_code_2, size: 18),
-              label: const Text('Mon identifiant'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text('En ce moment en restaurant', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 150,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _offers.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, i) => _OfferCard(offer: _offers[i]),
-          ),
-        ),
-        const SizedBox(height: 28),
-        Text('Votre restaurant favori', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: _level1Decoration(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        FadeSlideIn(
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      appState.favoriteRestaurantName ?? 'Aucun restaurant sélectionné',
-                      style: Theme.of(context).textTheme.titleMedium,
+              const BrandSeal(size: 46),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appState.isGuest ? '${_greeting()} !' : '${_greeting()}, ${appState.username}',
+                      style: textTheme.titleLarge,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(color: AppColors.green, shape: BoxShape.circle),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Ouvert',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.green, letterSpacing: 0),
-                      ),
-                    ],
-                  ),
-                ],
+                    Text(
+                      appState.isGuest ? 'Envie d\'un bon poulet rôti ?' : 'Ravi de vous revoir',
+                      style: textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                children: const [
-                  _ServiceBadge(icon: Icons.storefront_outlined, label: 'Click & Collect'),
-                  _ServiceBadge(icon: Icons.delivery_dining_outlined, label: 'Livraison'),
-                  _ServiceBadge(icon: Icons.table_bar_outlined, label: 'Sur place'),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => onNavigate(2),
-                icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                label: const Text('Commander'),
-              ),
+              const SizedBox(width: 8),
+              // Invité : on l'invite à se connecter. Connecté : sa carte membre.
+              if (appState.isGuest)
+                _HeaderButton(
+                  icon: Icons.login_rounded,
+                  label: 'Me connecter',
+                  highlighted: true,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LoginScreen())),
+                )
+              else
+                _HeaderButton(
+                  icon: Icons.qr_code_2_rounded,
+                  label: 'Mon identifiant',
+                  onTap: () => _showMemberCard(context, appState),
+                ),
             ],
           ),
         ),
-        const SizedBox(height: 28),
-        Text('Événements & Ateliers', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                for (var i = 0; i < _events.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 12),
-                  _EventCard(event: _events[i]),
-                ],
-              ],
+        const SizedBox(height: 22),
+        FadeSlideIn(index: 1, child: _OpeningHero(restaurant: restaurant, onOrder: () => onNavigate(2))),
+        if (!appState.isGuest && appState.rewardTiers.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          FadeSlideIn(index: 2, child: _LoyaltyStrip(appState: appState, onTap: () => onNavigate(3))),
+        ],
+        const SizedBox(height: 30),
+        const FadeSlideIn(index: 3, child: SectionHeader('Les incontournables', eyebrow: 'En ce moment')),
+        const SizedBox(height: 14),
+        FadeSlideIn(
+          index: 4,
+          child: SizedBox(
+            height: 236,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: _features.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 14),
+              itemBuilder: (context, i) => _FeatureCard(feature: _features[i], onTap: () => onNavigate(2)),
             ),
           ),
         ),
-        const SizedBox(height: 28),
-        _ActionCard(
-          icon: Icons.restaurant_menu_outlined,
-          title: 'La carte',
-          description: 'Découvrez tous nos poulets rôtis, bowls et accompagnements.',
-          buttonLabel: 'Découvrir la carte',
-          onPressed: () => onNavigate(2),
-        ),
-        const SizedBox(height: 16),
-        _ActionCard(
-          icon: Icons.help_outline,
-          title: 'Besoin d\'assistance ?',
-          description: 'Une question sur votre commande ou votre compte fidélité ?',
-          buttonLabel: 'Consulter l\'aide',
-          onPressed: () => showHelpDialog(context),
+        const SizedBox(height: 30),
+        const FadeSlideIn(index: 5, child: SectionHeader('Événements à venir', eyebrow: 'Au restaurant')),
+        const SizedBox(height: 14),
+        const FadeSlideIn(index: 6, child: _UpcomingEvents()),
+        const SizedBox(height: 30),
+        FadeSlideIn(
+          index: 7,
+          child: Row(
+            children: [
+              Expanded(
+                child: _QuickAction(
+                  icon: Icons.restaurant_menu_rounded,
+                  title: 'La carte',
+                  subtitle: 'Poulets, bowls, plats du jour',
+                  onTap: () => onNavigate(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _QuickAction(
+                  icon: Icons.support_agent_rounded,
+                  title: 'Besoin d\'aide ?',
+                  subtitle: restaurant.phone ?? '',
+                  onTap: () => showHelpDialog(context),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
   void _showMemberCard(BuildContext context, AppState appState) {
-    showDialog(
+    final textTheme = Theme.of(context).textTheme;
+    showModalBottomSheet(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Mon identifiant'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.qr_code_2, size: 160, color: AppColors.orange),
-            const SizedBox(height: 12),
-            Text(appState.isGuest ? 'Invité' : appState.username, style: Theme.of(dialogContext).textTheme.titleMedium),
-            Text('${appState.points} points', style: Theme.of(dialogContext).textTheme.bodyMedium),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Fermer'),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Eyebrow('Carte membre', color: AppColors.honey),
+              const SizedBox(height: 6),
+              Text('Mon identifiant', style: textTheme.headlineSmall),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.cream,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  boxShadow: [BoxShadow(color: AppColors.honey.withValues(alpha: 0.35), blurRadius: 40)],
+                ),
+                child: const Icon(Icons.qr_code_2_rounded, size: 180, color: AppColors.charcoal),
+              ),
+              const SizedBox(height: 18),
+              Text(appState.username, style: textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text('${appState.points} points · présentez ce code en caisse', style: textTheme.bodySmall),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _ServiceBadge extends StatelessWidget {
-  const _ServiceBadge({required this.icon, required this.label});
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({required this.icon, required this.label, required this.onTap, this.highlighted = false});
 
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: AppColors.creamMuted),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
-    );
-  }
-}
-
-/// Level-1 elevation: [AppColors.charcoalSoft] fill, a hairline
-/// [AppColors.divider] border, and a barely-there shadow purely to lift the
-/// edge off the near-black background — used for standard cards/list tiles.
-BoxDecoration _level1Decoration({double radius = AppRadius.lg}) {
-  return BoxDecoration(
-    color: AppColors.charcoalSoft,
-    borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: AppColors.divider),
-    boxShadow: [
-      BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.4), blurRadius: 2, offset: const Offset(0, 1)),
-    ],
-  );
-}
-
-class _Offer {
-  const _Offer(this.title, this.subtitle);
-  final String title;
-  final String subtitle;
-}
-
-const _offers = [
-  _Offer('Nouveau', 'Le Crousty Cheddar arrive en boutique'),
-  _Offer('Cette semaine', 'Tajine du mercredi — 11,50 €'),
-  _Offer('Fidélité', 'Double points sur les bowls ce week-end'),
-];
-
-class _OfferCard extends StatelessWidget {
-  const _OfferCard({required this.offer});
-
-  final _Offer offer;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.secondary, AppColors.orangeDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    final fg = highlighted ? AppColors.charcoal : AppColors.cream;
+    return Pressable(
+      child: Material(
+        color: highlighted ? AppColors.orange : AppColors.glass,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          side: highlighted ? BorderSide.none : const BorderSide(color: AppColors.glassBorder),
         ),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.badgeAmber,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Text(
-              offer.title,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.charcoal,
-                    fontSize: 11,
-                    letterSpacing: 0,
-                  ),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: fg),
+                const SizedBox(width: 6),
+                Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg, fontSize: 13)),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            offer.subtitle,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.cream),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _Event {
-  const _Event(this.title, this.date, this.icon);
-  final String title;
-  final String date;
-  final IconData icon;
-}
+/// La grande carte du haut : ouvert / fermé en direct, horaires du jour et
+/// le bouton pour commander.
+class _OpeningHero extends StatelessWidget {
+  const _OpeningHero({required this.restaurant, required this.onOrder});
 
-const _events = [
-  _Event('Atelier découpe de poulet', 'Samedi 10h', Icons.content_cut),
-  _Event('Soirée dégustation', 'Vendredi 19h', Icons.local_fire_department_outlined),
-];
-
-class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event});
-
-  final _Event event;
+  final RestaurantLocation restaurant;
+  final VoidCallback onOrder;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 210,
-      padding: const EdgeInsets.all(14),
-      decoration: _level1Decoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final textTheme = Theme.of(context).textTheme;
+    final status = restaurant.statusAt(DateTime.now());
+    final statusColor = status.isOpen ? AppColors.green : AppColors.red;
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      radius: AppRadius.xl,
+      child: Stack(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.orange.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(event.icon, color: AppColors.orange, size: 20),
-          ),
-          const SizedBox(height: 8),
-          Text(event.title, style: Theme.of(context).textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
-          Text(event.date, style: Theme.of(context).textTheme.bodySmall),
-          const Spacer(),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              style: TextButton.styleFrom(minimumSize: const Size(0, 48), padding: EdgeInsets.zero),
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Réservation pour "${event.title}" enregistrée.')),
+          Positioned(
+            right: -30,
+            top: -30,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [AppColors.orange.withValues(alpha: 0.35), AppColors.orange.withValues(alpha: 0)],
+                ),
               ),
-              child: const Text('Réserver'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    StatusPill(label: status.headline, color: statusColor),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(status.detail, style: textTheme.bodySmall)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text('Votre poulet rôti,\nprêt quand vous l\'êtes.', style: textTheme.headlineSmall?.copyWith(height: 1.15)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.place_outlined, size: 16, color: AppColors.creamMuted),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(restaurant.address, style: textTheme.bodySmall)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.schedule_rounded, size: 16, color: AppColors.creamMuted),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text('Aujourd\'hui : ${restaurant.todayHoursLabel}', style: textTheme.bodySmall),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                GlowButton(
+                  icon: Icons.shopping_bag_rounded,
+                  label: status.isOpen ? 'Commander maintenant' : 'Commander pour plus tard',
+                  onPressed: onOrder,
+                ),
+              ],
             ),
           ),
         ],
@@ -317,62 +275,251 @@ class _EventCard extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.buttonLabel,
-    required this.onPressed,
-  });
+class _LoyaltyStrip extends StatelessWidget {
+  const _LoyaltyStrip({required this.appState, required this.onTap});
 
-  final IconData icon;
-  final String title;
-  final String description;
-  final String buttonLabel;
-  final VoidCallback onPressed;
+  final AppState appState;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final textTheme = Theme.of(context).textTheme;
+    final tiers = appState.rewardTiers;
+    final next = tiers.firstWhere((t) => t.points > appState.points, orElse: () => tiers.last);
+    final progress = (appState.points / next.points).clamp(0.0, 1.0);
+    final left = (next.points - appState.points).clamp(0, next.points);
+    return GlassCard(
+      onTap: onTap,
       padding: const EdgeInsets.all(16),
-      decoration: _level1Decoration(),
+      borderColor: AppColors.honey.withValues(alpha: 0.35),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.orange.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.md),
+          SizedBox(
+            width: 52,
+            height: 52,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 4,
+                  color: AppColors.honey,
+                  backgroundColor: AppColors.honey.withValues(alpha: 0.15),
+                  strokeCap: StrokeCap.round,
+                ),
+                const Icon(Icons.workspace_premium_rounded, color: AppColors.honey, size: 22),
+              ],
             ),
-            child: Icon(icon, color: AppColors.orange),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(description, style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    style: TextButton.styleFrom(minimumSize: const Size(0, 48), padding: EdgeInsets.zero),
-                    onPressed: onPressed,
-                    child: Text(
-                      buttonLabel,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.orange, letterSpacing: 0),
-                    ),
-                  ),
+                Text('${appState.points} points', style: textTheme.titleMedium?.copyWith(color: AppColors.honey)),
+                const SizedBox(height: 2),
+                Text(
+                  left == 0 ? '« ${next.label} » est à vous !' : 'Plus que $left pts pour « ${next.label} »',
+                  style: textTheme.bodySmall,
                 ),
               ],
             ),
           ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.creamMuted),
+        ],
+      ),
+    );
+  }
+}
+
+class _Feature {
+  const _Feature({required this.image, required this.tag, required this.title, required this.subtitle});
+  final String image;
+  final String tag;
+  final String title;
+  final String subtitle;
+}
+
+const _features = [
+  _Feature(
+    image: 'assets/images/tasty_cheddar.jpg',
+    tag: 'Nouveau',
+    title: 'Crousty Cheddar',
+    subtitle: 'Bowl M 8,50 € · L 10,00 €',
+  ),
+  _Feature(
+    image: 'assets/images/tajine.jpg',
+    tag: 'Le mercredi',
+    title: 'Tajine du mercredi',
+    subtitle: 'Plat de la semaine · 11,50 €',
+  ),
+];
+
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({required this.feature, required this.onTap});
+
+  final _Feature feature;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final width = (MediaQuery.sizeOf(context).width * 0.74).clamp(240.0, 340.0);
+    return Pressable(
+      child: SizedBox(
+        width: width,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.45), blurRadius: 24, offset: const Offset(0, 12))],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            child: Material(
+              color: AppColors.charcoal,
+              child: InkWell(
+                onTap: onTap,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(feature.image, fit: BoxFit.cover),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, AppColors.charcoal.withValues(alpha: 0.92)],
+                          stops: const [0.35, 1],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 14,
+                      top: 14,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.honey,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          feature.tag.toUpperCase(),
+                          style: textTheme.labelSmall?.copyWith(color: AppColors.charcoal, letterSpacing: 1),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: 16,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(feature.title, style: textTheme.titleLarge),
+                                const SizedBox(height: 2),
+                                Text(feature.subtitle, style: textTheme.bodySmall?.copyWith(color: AppColors.cream)),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(color: AppColors.orange, shape: BoxShape.circle),
+                            child: const Icon(Icons.arrow_forward_rounded, color: AppColors.charcoal, size: 20),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Événements à venir. Aucun n'est programmé pour l'instant : on l'affiche
+/// honnêtement plutôt que d'inventer des dates. Pour en annoncer un, ajouter
+/// une entrée à [_events].
+class _UpcomingEvents extends StatelessWidget {
+  const _UpcomingEvents();
+
+  static const List<({String title, String date})> _events = [];
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    if (_events.isEmpty) {
+      return GlassCard(
+        child: Row(
+          children: [
+            const IconBadge(Icons.celebration_rounded, color: AppColors.honey),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Rien de prévu pour l\'instant', style: textTheme.titleMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Soirées spéciales, plats de saison… les prochains rendez-vous de Mamie apparaîtront ici.',
+                    style: textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Column(
+      children: [
+        for (final e in _events)
+          GlassCard(
+            margin: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                const IconBadge(Icons.event_rounded, color: AppColors.honey),
+                const SizedBox(width: 14),
+                Expanded(child: Text(e.title, style: textTheme.titleMedium)),
+                Text(e.date, style: textTheme.bodySmall),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({required this.icon, required this.title, required this.subtitle, required this.onTap});
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return GlassCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconBadge(icon, size: 40),
+          const SizedBox(height: 14),
+          Text(title, style: textTheme.titleMedium),
+          const SizedBox(height: 2),
+          Text(subtitle, style: textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

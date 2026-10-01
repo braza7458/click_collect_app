@@ -4,6 +4,8 @@ import '../../data/menu_data.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/item_options_sheet.dart';
+import '../../widgets/menu_visuals.dart';
+import '../../widgets/ui.dart';
 import '../cart_screen.dart';
 
 class OrderTab extends StatefulWidget {
@@ -16,25 +18,39 @@ class OrderTab extends StatefulWidget {
 class _OrderTabState extends State<OrderTab> {
   int _selectedCategory = 0;
 
+  void _openCart() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CartScreen()));
+
   @override
   Widget build(BuildContext context) {
     final appState = AppStateScope.of(context);
+    final textTheme = Theme.of(context).textTheme;
     final categories = appState.menuCategories;
     if (categories.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
     final selected = _selectedCategory.clamp(0, categories.length - 1);
+    final category = categories[selected];
+
     return Stack(
       children: [
         CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 14, 12, 4),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
-                    Expanded(child: Text('La carte', style: Theme.of(context).textTheme.headlineSmall)),
-                    _CartIconButton(count: appState.cartItemCount),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Eyebrow('Préparé à la commande'),
+                          const SizedBox(height: 4),
+                          Text('La carte', style: textTheme.headlineMedium),
+                        ],
+                      ),
+                    ),
+                    _CartIconButton(count: appState.cartItemCount, onTap: _openCart),
                   ],
                 ),
               ),
@@ -47,70 +63,69 @@ class _OrderTabState extends State<OrderTab> {
               ),
             ),
             SliverPadding(
-              padding: EdgeInsets.fromLTRB(20, 8, 20, appState.cart.isEmpty ? 24 : 100),
+              padding: EdgeInsets.fromLTRB(20, 6, 20, appState.cart.isEmpty ? 24 : 110),
               sliver: SliverList.separated(
-                itemCount: categories[selected].items.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, i) => _MenuTile(
-                  item: categories[selected].items[i],
+                itemCount: category.items.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, i) => FadeSlideIn(
+                  key: ValueKey('${category.title}-$i'),
+                  index: i,
+                  child: _MenuTile(item: category.items[i], iconKey: category.iconKey),
                 ),
               ),
             ),
           ],
         ),
-        if (appState.cart.isNotEmpty)
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 16,
-            child: ElevatedButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CartScreen()),
-              ),
-              child: Text(
-                '${appState.cartItemCount} article${appState.cartItemCount > 1 ? 's' : ''} · '
-                '${formatPrice(appState.cartTotal)} — Voir le panier',
-              ),
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 12,
+          child: AnimatedSlide(
+            offset: appState.cart.isEmpty ? const Offset(0, 1.6) : Offset.zero,
+            duration: AppMotion.medium,
+            curve: AppMotion.curve,
+            child: AnimatedOpacity(
+              opacity: appState.cart.isEmpty ? 0 : 1,
+              duration: AppMotion.medium,
+              child: appState.cart.isEmpty
+                  ? const SizedBox(height: 58)
+                  : GlowButton(
+                      label: '${appState.cartItemCount} article${appState.cartItemCount > 1 ? 's' : ''} · '
+                          '${formatPrice(appState.cartTotal)} — Voir le panier',
+                      icon: Icons.shopping_bag_rounded,
+                      onPressed: _openCart,
+                    ),
             ),
           ),
+        ),
       ],
     );
   }
 }
 
 class _CartIconButton extends StatelessWidget {
-  const _CartIconButton({required this.count});
+  const _CartIconButton({required this.count, required this.onTap});
 
   final int count;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        IconButton(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const CartScreen()),
-          ),
-          icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.cream),
-          tooltip: 'Panier',
-        ),
-        if (count > 0)
-          Positioned(
-            right: 4,
-            top: 4,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              decoration: const BoxDecoration(color: AppColors.orange, shape: BoxShape.circle),
-              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-              child: Text(
-                '$count',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.charcoal, fontSize: 10, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-      ],
+    return IconButton(
+      onPressed: onTap,
+      tooltip: 'Panier',
+      style: IconButton.styleFrom(
+        backgroundColor: AppColors.glass,
+        side: const BorderSide(color: AppColors.glassBorder),
+        fixedSize: const Size(48, 48),
+      ),
+      icon: Badge(
+        isLabelVisible: count > 0,
+        label: Text('$count'),
+        backgroundColor: AppColors.orange,
+        textColor: AppColors.charcoal,
+        child: const Icon(Icons.shopping_bag_outlined, color: AppColors.cream),
+      ),
     );
   }
 }
@@ -124,27 +139,54 @@ class _CategoryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return SizedBox(
-      height: 56,
+      height: 64,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         itemCount: categories.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           final isSelected = i == selected;
-          return ChoiceChip(
-            label: Text(categories[i].title),
-            selected: isSelected,
-            onSelected: (_) => onSelected(i),
-            selectedColor: AppColors.orange,
-            backgroundColor: AppColors.charcoalSoft,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
-            labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: isSelected ? AppColors.charcoal : AppColors.cream,
-                  letterSpacing: 0,
+          return Pressable(
+            child: AnimatedContainer(
+              duration: AppMotion.medium,
+              curve: AppMotion.curve,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.orange : AppColors.glass,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(color: isSelected ? AppColors.orange : AppColors.glassBorder),
+                boxShadow: isSelected
+                    ? [BoxShadow(color: AppColors.orange.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))]
+                    : null,
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  customBorder: const StadiumBorder(),
+                  onTap: () => onSelected(i),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          categoryIcon(categories[i].iconKey),
+                          size: 18,
+                          color: isSelected ? AppColors.charcoal : AppColors.creamMuted,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          categories[i].title,
+                          style: textTheme.labelLarge?.copyWith(color: isSelected ? AppColors.charcoal : AppColors.cream),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-            side: BorderSide(color: isSelected ? AppColors.orange : AppColors.divider),
+              ),
+            ),
           );
         },
       ),
@@ -153,68 +195,77 @@ class _CategoryChips extends StatelessWidget {
 }
 
 class _MenuTile extends StatelessWidget {
-  const _MenuTile({required this.item});
+  const _MenuTile({required this.item, required this.iconKey});
 
   final MenuItem item;
+  final String iconKey;
 
   @override
   Widget build(BuildContext context) {
-    final content = Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.charcoalSoft,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.divider),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 2, offset: const Offset(0, 1)),
-        ],
-      ),
-      child: Opacity(
-        opacity: item.isOrderable ? 1 : 0.55,
+    final textTheme = Theme.of(context).textTheme;
+    final image = menuItemImage(item.name, categoryKey: iconKey);
+    return Opacity(
+      opacity: item.isOrderable || item.isInfoOnly ? 1 : 0.55,
+      child: GlassCard(
+        padding: const EdgeInsets.all(12),
+        onTap: item.isOrderable ? () => showItemOptionsSheet(context, item, categoryKey: iconKey) : null,
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.orange.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: SizedBox(
+                width: 74,
+                height: 74,
+                child: image != null
+                    ? Image.asset(image, fit: BoxFit.cover)
+                    : DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [AppColors.orange.withValues(alpha: 0.30), AppColors.secondary.withValues(alpha: 0.18)],
+                          ),
+                        ),
+                        child: Icon(categoryIcon(iconKey), color: AppColors.orange, size: 32),
+                      ),
               ),
-              child: const Icon(Icons.restaurant_outlined, color: AppColors.orange, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(item.name, style: Theme.of(context).textTheme.titleMedium),
+                  Text(item.name, style: textTheme.titleMedium),
                   if (item.note != null) ...[
-                    const SizedBox(height: 2),
-                    Text(item.note!, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.creamMuted)),
+                    const SizedBox(height: 3),
+                    Text(item.note!, style: textTheme.bodySmall),
                   ],
+                  const SizedBox(height: 8),
+                  Text(
+                    item.priceLabel,
+                    style: textTheme.titleSmall?.copyWith(
+                      color: item.isInfoOnly ? AppColors.creamMuted : AppColors.orange,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-            Text(
-              item.priceLabel,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.orange, fontWeight: FontWeight.w700),
-            ),
-            if (item.isOrderable) ...[
-              const SizedBox(width: 6),
-              const Icon(Icons.add_circle_outline, color: AppColors.orange, size: 20),
-            ],
+            if (item.isOrderable)
+              Container(
+                width: 38,
+                height: 38,
+                margin: const EdgeInsets.only(left: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.orange,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: AppColors.orange.withValues(alpha: 0.4), blurRadius: 12)],
+                ),
+                child: const Icon(Icons.add_rounded, color: AppColors.charcoal),
+              ),
           ],
         ),
       ),
-    );
-
-    if (!item.isOrderable) return content;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      onTap: () => showItemOptionsSheet(context, item),
-      child: content,
     );
   }
 }

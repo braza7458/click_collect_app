@@ -129,7 +129,6 @@ class _WebCheckoutScreenState extends State<WebCheckoutScreen> {
     final order = await appState.placeOrder(
       mode: widget.mode,
       customerPhone: widget.customerPhone,
-      restaurantName: widget.restaurantName,
       fulfillmentDetail: widget.fulfillmentDetail,
       paid: true,
       reward: widget.reward,

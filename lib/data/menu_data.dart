@@ -85,20 +85,25 @@ class MenuCategory {
   const MenuCategory({
     required this.title,
     required this.items,
+    this.iconKey = 'chicken',
   });
 
   final String title;
   final List<MenuItem> items;
 
+  /// Clé d'icône partagée avec la borne : chicken, bowl, addOn, side,
+  /// special, dessert — voir `widgets/menu_visuals.dart`.
+  final String iconKey;
+
   Map<String, dynamic> toMap() => {
         'title': title,
+        'icon': iconKey,
         'items': items.map((i) => i.toMap()).toList(),
       };
 
-  // The kiosk's menu documents also carry an `icon` field (for its category
-  // rail) — this app doesn't use it, so it's simply ignored here.
   factory MenuCategory.fromMap(Map<String, dynamic> map) => MenuCategory(
         title: map['title'] as String,
+        iconKey: map['icon'] as String? ?? 'chicken',
         items: (map['items'] as List<dynamic>? ?? [])
             .map((i) => MenuItem.fromMap(Map<String, dynamic>.from(i as Map)))
             .toList(),

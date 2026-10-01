@@ -24,9 +24,7 @@ AppState _testAppState() => AppState(auth: MockFirebaseAuth())
       items: [MenuItem(name: 'Le Poulet Rôti', price: 20.50)],
     ),
   ]
-  ..restaurants = const [
-    RestaurantLocation(name: 'Les Poulets de Mamie — Centre Ville', address: '12 Rue de la République', hours: '11h30 - 21h30'),
-  ]
+  ..restaurant = RestaurantLocation.artix
   ..rewardTiers = const [
     RewardTier(points: 100, label: 'Un dessert offert', iconKey: 'dessert'),
   ];
@@ -94,11 +92,12 @@ void main() {
     await tester.tap(find.byIcon(Icons.shopping_bag_outlined));
     await tester.pumpAndSettle();
 
-    // Table service needs the least setup to reach a submittable cart.
-    await tester.tap(find.text('Service à table'));
+    // Click & Collect : le premier créneau proposé (toujours dans les heures
+    // d'ouverture, quelle que soit l'heure du test) + le téléphone du SMS.
+    await tester.tap(find.text('Click & Collect'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).at(0), '12'); // table number
-    await tester.enterText(find.byType(TextField).at(1), '0612345678'); // SMS phone
+    await tester.tap(find.byType(ChoiceChip).first);
+    await tester.enterText(find.byType(TextField).first, '0612345678'); // SMS phone
     await tester.pumpAndSettle();
 
     // This first button just navigates to the Stripe screen — it doesn't pay.
@@ -138,10 +137,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.shopping_bag_outlined));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Service à table'));
+    await tester.tap(find.text('Click & Collect'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).at(0), '5'); // table number
-    await tester.enterText(find.byType(TextField).at(1), '0612345678'); // SMS phone
+    await tester.tap(find.byType(ChoiceChip).first);
+    await tester.enterText(find.byType(TextField).first, '0612345678'); // SMS phone
     await tester.pumpAndSettle();
 
     // placeOrder() now writes to Firestore first (and falls back to local
@@ -181,6 +180,27 @@ void main() {
     await tester.tap(find.text('Je valide mon inscription'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Mon restaurant favori'), findsOneWidget);
+    // Restaurant unique : plus d'étape "restaurant favori", on arrive
+    // directement sur la présentation du programme fidélité.
+    expect(find.text('Bienvenue dans le club !'), findsOneWidget);
+  });
+
+  test('Opening hours: closed Monday/Tuesday, two services Wednesday–Saturday, lunch only Sunday', () {
+    const r = RestaurantLocation.artix;
+    // 2026-10-05 est un lundi.
+    expect(r.isOpenAt(DateTime(2026, 10, 5, 12)), isFalse);
+    expect(r.isOpenAt(DateTime(2026, 10, 6, 12)), isFalse);
+    expect(r.isOpenAt(DateTime(2026, 10, 7, 9, 30)), isTrue);
+    expect(r.isOpenAt(DateTime(2026, 10, 7, 14, 30)), isFalse);
+    expect(r.isOpenAt(DateTime(2026, 10, 9, 20, 59)), isTrue);
+    expect(r.isOpenAt(DateTime(2026, 10, 11, 12)), isTrue);
+    expect(r.isOpenAt(DateTime(2026, 10, 11, 19)), isFalse);
+    // Fermé lundi soir → prochaine ouverture mercredi 9h30.
+    expect(r.nextOpening(DateTime(2026, 10, 5, 19)), DateTime(2026, 10, 7, 9, 30));
+    expect(r.statusAt(DateTime(2026, 10, 5, 19)).detail, 'ouvre mercredi à 9h30');
+    // Les créneaux de retrait proposés tombent toujours pendant l'ouverture.
+    for (final slot in r.pickupSlots(DateTime(2026, 10, 9, 14, 0))) {
+      expect(r.acceptsPickupAt(slot), isTrue);
+    }
   });
 }

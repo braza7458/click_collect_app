@@ -5,9 +5,8 @@ import 'menu_data.dart';
 import 'restaurant_data.dart';
 
 /// Reads the shared catalog from Firestore — the same `menuCategories`
-/// collection the kiosk reads, plus the restaurant list and loyalty reward
-/// tiers, so both surfaces (and, eventually, whoever edits the menu) stay in
-/// sync without republishing the app.
+/// collection the kiosk reads, plus the restaurant and loyalty reward tiers,
+/// so both surfaces stay in sync without republishing the app.
 class CatalogRepository {
   const CatalogRepository._();
 
@@ -16,9 +15,15 @@ class CatalogRepository {
     return snapshot.docs.map((doc) => MenuCategory.fromMap(doc.data())).toList();
   }
 
-  static Future<List<RestaurantLocation>> fetchRestaurants() async {
+  /// L'enseigne n'a qu'un restaurant : on prend le premier document au
+  /// format actuel (avec `schedule`), sinon la valeur intégrée à l'app.
+  static Future<RestaurantLocation> fetchRestaurant() async {
     final snapshot = await FirebaseFirestore.instance.collection('restaurants').orderBy('order').get();
-    return snapshot.docs.map((doc) => RestaurantLocation.fromMap(doc.data())).toList();
+    for (final doc in snapshot.docs) {
+      final restaurant = RestaurantLocation.fromMap(doc.data());
+      if (restaurant != null) return restaurant;
+    }
+    return RestaurantLocation.artix;
   }
 
   static Future<List<RewardTier>> fetchRewardTiers() async {

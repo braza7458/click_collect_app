@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'tabs/fidelity_tab.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
 import 'tabs/order_tab.dart';
-import 'tabs/restaurants_tab.dart';
+import 'tabs/restaurant_tab.dart';
 
 class DashboardShell extends StatefulWidget {
   const DashboardShell({super.key});
@@ -21,74 +22,107 @@ class _DashboardShellState extends State<DashboardShell> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = AppStateScope.of(context);
     final tabs = [
       HomeTab(onNavigate: _goToTab),
-      const RestaurantsTab(),
+      const RestaurantTab(),
       const OrderTab(),
-      const FidelityTab(),
+      FidelityTab(onNavigate: _goToTab),
       const MoreTab(),
     ];
 
     final navTextTheme = Theme.of(context).textTheme;
+    final cartCount = appState.cartItemCount;
 
     return Scaffold(
       body: SafeArea(
+        bottom: false,
         child: IndexedStack(index: _navIndex, children: tabs),
       ),
-      bottomNavigationBar: DecoratedBox(
-        // Hairline top border instead of a heavy Material shadow — the
-        // "elevation from borders, not fills" language of the design system.
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
-        ),
-        child: NavigationBarTheme(
-          data: NavigationBarThemeData(
-            labelTextStyle: WidgetStateProperty.resolveWith((states) {
-              final base = navTextTheme.labelSmall ?? const TextStyle(fontSize: 12);
-              return base.copyWith(
-                color: states.contains(WidgetState.selected) ? AppColors.orange : AppColors.creamMuted,
-                fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
-              );
-            }),
-          ),
-          child: NavigationBar(
-            height: 68,
-            elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            backgroundColor: AppColors.charcoalSoft,
-            // Filled icon + gold tint marks the selected tab; the soft gold
-            // indicator pill sits behind it at low opacity (never a hard fill).
-            indicatorColor: AppColors.orange.withValues(alpha: 0.16),
-            indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
-            selectedIndex: _navIndex,
-            onDestinationSelected: _goToTab,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.storefront_outlined, color: AppColors.creamMuted),
-                selectedIcon: Icon(Icons.storefront, color: AppColors.orange),
-                label: 'Pour vous',
+      // Barre de navigation flottante en verre fumé, détachée des bords.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              border: Border.all(color: AppColors.glassBorder),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.45), blurRadius: 30, offset: const Offset(0, 12)),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              child: NavigationBarTheme(
+                data: NavigationBarThemeData(
+                  labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                    final selected = states.contains(WidgetState.selected);
+                    return (navTextTheme.labelSmall ?? const TextStyle(fontSize: 11)).copyWith(
+                      color: selected ? AppColors.orange : AppColors.creamMuted,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      letterSpacing: 0,
+                      fontSize: 11,
+                    );
+                  }),
+                ),
+                child: NavigationBar(
+                  height: 66,
+                  elevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  backgroundColor: AppColors.glassStrong,
+                  indicatorColor: AppColors.orange.withValues(alpha: 0.18),
+                  indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                  selectedIndex: _navIndex,
+                  onDestinationSelected: _goToTab,
+                  destinations: [
+                    const NavigationDestination(
+                      icon: Icon(Icons.home_outlined, color: AppColors.creamMuted),
+                      selectedIcon: Icon(Icons.home_rounded, color: AppColors.orange),
+                      label: 'Pour vous',
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.storefront_outlined, color: AppColors.creamMuted),
+                      selectedIcon: Icon(Icons.storefront_rounded, color: AppColors.orange),
+                      label: 'Restaurant',
+                    ),
+                    NavigationDestination(
+                      icon: Badge(
+                        isLabelVisible: cartCount > 0,
+                        label: Text('$cartCount'),
+                        backgroundColor: AppColors.orange,
+                        textColor: AppColors.charcoal,
+                        child: const Icon(Icons.restaurant_menu_outlined, color: AppColors.creamMuted),
+                      ),
+                      selectedIcon: Badge(
+                        isLabelVisible: cartCount > 0,
+                        label: Text('$cartCount'),
+                        backgroundColor: AppColors.honey,
+                        textColor: AppColors.charcoal,
+                        child: const Icon(Icons.restaurant_menu_rounded, color: AppColors.orange),
+                      ),
+                      label: 'Commander',
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.workspace_premium_outlined, color: AppColors.creamMuted),
+                      selectedIcon: Icon(Icons.workspace_premium_rounded, color: AppColors.orange),
+                      label: 'Fidélité',
+                    ),
+                    NavigationDestination(
+                      icon: Badge(
+                        isLabelVisible: appState.unreadNotificationCount > 0,
+                        smallSize: 8,
+                        backgroundColor: AppColors.orange,
+                        child: const Icon(Icons.person_outline_rounded, color: AppColors.creamMuted),
+                      ),
+                      selectedIcon: const Icon(Icons.person_rounded, color: AppColors.orange),
+                      label: 'Plus',
+                    ),
+                  ],
+                ),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.place_outlined, color: AppColors.creamMuted),
-                selectedIcon: Icon(Icons.place, color: AppColors.orange),
-                label: 'Restaurants',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.restaurant_menu_outlined, color: AppColors.creamMuted),
-                selectedIcon: Icon(Icons.restaurant_menu, color: AppColors.orange),
-                label: 'Commander',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.loyalty_outlined, color: AppColors.creamMuted),
-                selectedIcon: Icon(Icons.loyalty, color: AppColors.orange),
-                label: 'Fidélité',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.menu_outlined, color: AppColors.creamMuted),
-                selectedIcon: Icon(Icons.menu, color: AppColors.orange),
-                label: 'Plus',
-              ),
-            ],
+            ),
           ),
         ),
       ),

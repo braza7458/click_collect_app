@@ -10,6 +10,18 @@ import 'order_mode.dart';
 /// (click_collect_terminal), which is the only place that advances it.
 enum OrderStatus { confirmed, ready, completed }
 
+extension OrderStatusInfo on OrderStatus {
+  /// Libellé côté client (le terminal parle de "Nouvelle / Prête / Terminée").
+  String get label => switch (this) {
+        OrderStatus.confirmed => 'En préparation',
+        OrderStatus.ready => 'Prête à récupérer',
+        OrderStatus.completed => 'Récupérée',
+      };
+
+  /// Étape dans le suivi (0, 1, 2).
+  int get step => index;
+}
+
 class Order {
   Order({
     required this.id,
@@ -75,15 +87,15 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) => Order(
         id: json['id'] as String,
         date: DateTime.parse(json['date'] as String),
-        mode: OrderMode.values.byName(json['mode'] as String),
+        mode: OrderMode.values.asNameMap()[json['mode']] ?? OrderMode.clickCollect,
         lines: (json['lines'] as List<dynamic>)
-            .map((l) => CartLine.fromJson(l as Map<String, dynamic>))
+            .map((l) => CartLine.fromJson(Map<String, dynamic>.from(l as Map)))
             .toList(),
         total: (json['total'] as num).toDouble(),
-        pointsEarned: json['pointsEarned'] as int,
+        pointsEarned: (json['pointsEarned'] as num?)?.toInt() ?? 0,
         restaurantName: json['restaurantName'] as String?,
         fulfillmentDetail: json['fulfillmentDetail'] as String?,
-        status: OrderStatus.values.byName(json['status'] as String? ?? 'confirmed'),
+        status: OrderStatus.values.asNameMap()[json['status']] ?? OrderStatus.confirmed,
         paid: json['paid'] as bool? ?? false,
         userId: json['userId'] as String?,
         customerPhone: json['customerPhone'] as String?,

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
-import 'choose_restaurant_screen.dart';
+import '../widgets/ui.dart';
+import 'loyalty_intro_screen.dart';
 
 class SignupStep2Screen extends StatefulWidget {
   const SignupStep2Screen({super.key, required this.username, required this.password});
@@ -38,8 +39,9 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
       });
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ChooseRestaurantScreen()),
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoyaltyIntroScreen()),
+      (route) => false,
     );
   }
 
@@ -60,7 +62,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                       child: LinearProgressIndicator(
                         value: 1,
                         minHeight: 6,
-                        backgroundColor: AppColors.charcoalSoft,
+                        backgroundColor: AppColors.glassBorder,
                         valueColor: const AlwaysStoppedAnimation(AppColors.orange),
                       ),
                     ),
@@ -81,7 +83,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: AppColors.charcoalSoft,
+                        color: AppColors.glass,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                         border: Border.all(color: AppColors.orange.withValues(alpha: 0.3)),
                         boxShadow: [
@@ -147,15 +149,10 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: ElevatedButton(
-                onPressed: _acceptedTerms && !_submitting ? _validate : null,
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.charcoal),
-                      )
-                    : const Text('Je valide mon inscription'),
+              child: GlowButton(
+                label: 'Je valide mon inscription',
+                busy: _submitting,
+                onPressed: _acceptedTerms ? _validate : null,
               ),
             ),
           ],

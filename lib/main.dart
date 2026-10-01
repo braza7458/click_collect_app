@@ -8,6 +8,7 @@ import 'screens/dashboard_shell.dart';
 import 'screens/welcome_screen.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
+import 'widgets/ui.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,9 +74,24 @@ class _SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child: FadeSlideIn(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const BrandSeal(size: 112),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: 120,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  child: const LinearProgressIndicator(minHeight: 3),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

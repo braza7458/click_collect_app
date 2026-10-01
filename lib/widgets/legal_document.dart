@@ -38,9 +38,9 @@ class LegalDocumentScreen extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: AppColors.surfaceAlt,
+                color: AppColors.glassStrong,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: const Border(left: BorderSide(color: AppColors.badgeAmber, width: 3)),
+                border: const Border(left: BorderSide(color: AppColors.honey, width: 3)),
               ),
               child: Text(
                 'Modèle à faire valider par un professionnel du droit avant publication. '

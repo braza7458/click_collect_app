@@ -87,7 +87,6 @@ class AppState extends ChangeNotifier {
   bool isGuest = false;
   int points = 0;
 
-  String? favoriteRestaurantName;
   OrderMode? lastOrderMode;
 
   List<CartLine> cart = [];
@@ -97,8 +96,11 @@ class AppState extends ChangeNotifier {
   /// The shared catalog, read from Firestore — the same menu the kiosk
   /// reads. Empty until [loadCatalog] resolves.
   List<MenuCategory> menuCategories = [];
-  List<RestaurantLocation> restaurants = [];
   List<RewardTier> rewardTiers = [];
+
+  /// Le restaurant (unique) de l'enseigne — adresse, téléphone, horaires.
+  /// Valeur intégrée par défaut, remplacée par Firestore si disponible.
+  RestaurantLocation restaurant = RestaurantLocation.artix;
 
   SharedPreferences? _prefs;
 
@@ -119,20 +121,21 @@ class AppState extends ChangeNotifier {
       .items;
 
   Future<void> loadCatalog() async {
-    try {
-      final results = await Future.wait([
-        CatalogRepository.fetchMenu(),
-        CatalogRepository.fetchRestaurants(),
-        CatalogRepository.fetchRewardTiers(),
-      ]);
-      menuCategories = results[0] as List<MenuCategory>;
-      restaurants = results[1] as List<RestaurantLocation>;
-      rewardTiers = results[2] as List<RewardTier>;
-    } catch (_) {
-      // Offline, or Firestore unreachable — keep whatever catalog is
-      // already loaded rather than taking the app down.
-    }
+    // Chaque morceau est chargé indépendamment : si l'un échoue (hors ligne,
+    // Firestore injoignable), on garde ce qui est déjà en mémoire pour lui
+    // sans perdre les autres.
+    await Future.wait([
+      _tryLoad(() async => menuCategories = await CatalogRepository.fetchMenu()),
+      _tryLoad(() async => restaurant = await CatalogRepository.fetchRestaurant()),
+      _tryLoad(() async => rewardTiers = await CatalogRepository.fetchRewardTiers()),
+    ]);
     notifyListeners();
+  }
+
+  Future<void> _tryLoad(Future<void> Function() load) async {
+    try {
+      await load();
+    } catch (_) {}
   }
 
   /// Restores local prefs (cart, notifications…) and the signed-in session,
@@ -160,7 +163,6 @@ class AppState extends ChangeNotifier {
       if (data != null) {
         username = data['username'] as String? ?? '';
         points = (data['points'] as num?)?.toInt() ?? 0;
-        favoriteRestaurantName = data['favoriteRestaurantName'] as String?;
       }
       orderHistory = await OrdersRepository.fetchOrdersForUser(uid);
     } catch (_) {
@@ -210,7 +212,6 @@ class AppState extends ChangeNotifier {
         await UserRepository.createProfile(newUid, {
           'username': username,
           'points': 0,
-          'favoriteRestaurantName': null,
         });
       } catch (_) {
         // Offline right at signup — the Auth account still exists, so let
@@ -219,7 +220,6 @@ class AppState extends ChangeNotifier {
       this.username = username;
       points = 0;
       isGuest = false;
-      favoriteRestaurantName = null;
       orderHistory = [];
       notifyListeners();
       return const AuthResult.success();
@@ -260,15 +260,14 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> setFavoriteRestaurant(String name) async {
-    favoriteRestaurantName = name;
+  /// Recharge l'historique (tirer pour actualiser, retour sur l'écran…).
+  Future<void> refreshOrders() async {
     final currentUid = uid;
-    if (!isGuest && currentUid != null) {
-      try {
-        await UserRepository.updateProfile(currentUid, {'favoriteRestaurantName': name});
-      } catch (_) {}
-    }
-    notifyListeners();
+    if (currentUid == null) return;
+    try {
+      orderHistory = await OrdersRepository.fetchOrdersForUser(currentUid);
+      notifyListeners();
+    } catch (_) {}
   }
 
   void setOrderMode(OrderMode mode) {
@@ -334,7 +333,6 @@ class AppState extends ChangeNotifier {
   Future<Order> placeOrder({
     required OrderMode mode,
     required String customerPhone,
-    String? restaurantName,
     String? fulfillmentDetail,
     bool paid = false,
     RewardTier? reward,
@@ -352,7 +350,7 @@ class AppState extends ChangeNotifier {
       lines: List.of(cart),
       total: total,
       pointsEarned: earned,
-      restaurantName: restaurantName,
+      restaurantName: restaurant.name,
       fulfillmentDetail: fulfillmentDetail,
       paid: paid,
       userId: currentUid,
@@ -439,7 +437,6 @@ class AppState extends ChangeNotifier {
     username = '';
     isGuest = false;
     points = 0;
-    favoriteRestaurantName = null;
     lastOrderMode = null;
     cart = [];
     orderHistory = [];

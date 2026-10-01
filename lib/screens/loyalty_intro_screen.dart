@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ui.dart';
 import 'dashboard_shell.dart';
 
 class LoyaltyIntroScreen extends StatelessWidget {
@@ -20,21 +21,21 @@ class LoyaltyIntroScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              Text('Le programme fidélité', style: textTheme.headlineMedium),
+              Text('Bienvenue dans le club !', style: textTheme.headlineMedium),
               const SizedBox(height: 20),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppColors.orange, AppColors.orangeDark],
+                    colors: [Color(0xFFFFD98A), AppColors.honey, AppColors.orange],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(AppRadius.xl),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.orangeDark.withValues(alpha: 0.28),
+                      color: AppColors.honey.withValues(alpha: 0.35),
                       blurRadius: 24,
                       offset: const Offset(0, 8),
                     ),
@@ -69,9 +70,9 @@ class LoyaltyIntroScreen extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.charcoalSoft,
+                        color: AppColors.glass,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        border: Border.all(color: AppColors.divider),
+                        border: Border.all(color: AppColors.glassBorder),
                         boxShadow: const [
                           BoxShadow(color: Color(0x66000000), blurRadius: 2, offset: Offset(0, 1)),
                         ],
@@ -94,12 +95,12 @@ class LoyaltyIntroScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: AppColors.badgeAmber.withValues(alpha: 0.14),
+                              color: AppColors.honey.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(AppRadius.pill),
                             ),
                             child: Text(
                               '${tier.points} pts',
-                              style: textTheme.labelLarge?.copyWith(color: AppColors.badgeAmber),
+                              style: textTheme.labelLarge?.copyWith(color: AppColors.honey),
                             ),
                           ),
                         ],
@@ -109,12 +110,12 @@ class LoyaltyIntroScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
+              GlowButton(
+                label: 'Accéder à mon compte',
                 onPressed: () => Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const DashboardShell()),
                   (route) => false,
                 ),
-                child: const Text('Accéder à mon compte'),
               ),
             ],
           ),

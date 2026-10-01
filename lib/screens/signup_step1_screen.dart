@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/ui.dart';
 import 'signup_step2_screen.dart';
 
 class SignupStep1Screen extends StatefulWidget {
@@ -58,7 +59,7 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
                       child: LinearProgressIndicator(
                         value: 0.5,
                         minHeight: 6,
-                        backgroundColor: AppColors.charcoalSoft,
+                        backgroundColor: AppColors.glassBorder,
                         valueColor: const AlwaysStoppedAnimation<Color>(AppColors.orange),
                       ),
                     ),
@@ -108,10 +109,7 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen> {
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _canContinue ? _continue : null,
-                  child: const Text('Continuer'),
-                ),
+                child: GlowButton(label: 'Continuer', onPressed: _canContinue ? _continue : null),
               ),
             ),
           ],

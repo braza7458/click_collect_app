@@ -1,120 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// "Braise Dorée" design system tokens.
+import '../widgets/ui.dart';
+
+/// "Feu de Bois" — le système de design de Les Poulets de Mamie.
 ///
-/// Existing token NAMES are kept (`orange`, `orangeDark`, `charcoal`,
-/// `charcoalSoft`, `cream`, `creamMuted`, `red`, `green`) so every screen
-/// that already imports [AppColors] keeps compiling unchanged — only the
-/// VALUES moved, from a saturated fast-food orange/charcoal palette to a
-/// burnished antique-gold / candlelit-charcoal palette. `orange` and
-/// `orangeDark` now hold the brand's PRIMARY GOLD role (not a literal
-/// orange hue) — treat them as "primary" / "primaryDark" wherever you see
-/// them referenced downstream.
-///
-/// New tokens added because the design calls for a richer surface/accent
-/// stack than the old file had:
-/// - `secondary`   — terracotta/wood-fire accent for secondary buttons & CTAs' glow tint.
-/// - `badgeAmber`  — a THIRD accent, reserved only for the badge/tag system
-///                   (Label Rouge, "Nouveau", loyalty-tier pills) so tags never
-///                   visually compete with primary-gold CTAs.
-/// - `surfaceAlt`  — level-2 raised surface (sheets, dialogs, selected cards),
-///                   one step lighter than `charcoalSoft`.
-/// - `divider`     — hairline border/divider (cream @ ~8% opacity), used for
-///                   the level-1 card border and for DividerTheme.
-/// - `overlayScrim`— ~45% black scrim behind modals/bottom sheets.
+/// L'idée : la chaleur d'une rôtisserie le soir. Un fond photo flouté (la
+/// table, le poulet doré) sur lequel flottent des surfaces de "verre fumé",
+/// une couleur braise reprise du logo pour l'action, et un or miel réservé à
+/// la fidélité. Les noms historiques des jetons (`orange`, `charcoal`…) sont
+/// conservés pour que tout l'existant compile ; seules les valeurs et les
+/// nouveaux jetons (`honey`, `glass`…) changent.
 class AppColors {
-  // --- Primary accent: antique/burnished gold (was saturated orange) ---
-  /// Primary gold. ~7.8:1 contrast on [charcoal]. CTAs, active nav, loyalty highlights.
-  static const orange = Color(0xFFC9A227);
+  // --- Accents ---
+  /// Braise — la couleur d'action (CTA, onglet actif, prix). Reprise du logo.
+  /// Texte posé dessus : toujours [charcoal] (≈ 8:1).
+  static const orange = Color(0xFFF28C38);
 
-  /// Primary gold, pressed/darker state. Also used as the warm glow-shadow tint
-  /// behind primary buttons/cards (at low alpha, e.g. `orangeDark.withValues(alpha: 0.2)`).
-  static const orangeDark = Color(0xFF8C6B14);
+  /// Braise appuyée / ombre chaude derrière les CTA.
+  static const orangeDark = Color(0xFFB9541A);
 
-  /// Secondary / wood-fire terracotta accent — secondary buttons, alt glow tint.
-  /// Use `cream` (not `charcoal`) as the foreground on top of this fill — see
-  /// contrast note on [onSecondaryForeground] below.
-  static const secondary = Color(0xFF9C5A34);
+  /// Terre cuite — accent secondaire, dégradés.
+  static const secondary = Color(0xFFA8492A);
 
-  /// Third accent reserved strictly for the badge/tag system (Label Rouge,
-  /// "Nouveau", loyalty-tier pills) — deliberately distinct from [orange] so
-  /// quality/promo tags never compete visually with primary CTAs.
-  static const badgeAmber = Color(0xFFD4A24E);
+  /// Or miel — réservé à la fidélité (points, récompenses, badges).
+  static const honey = Color(0xFFF6C35B);
 
-  // --- Backgrounds / surfaces (matte, candlelit, near-black) ---
-  /// Scaffold background.
-  static const charcoal = Color(0xFF14110D);
+  /// Alias historique de [honey] pour le système de badges.
+  static const badgeAmber = honey;
 
-  /// Level-1 surface: standard cards, list tiles, input fields.
-  static const charcoalSoft = Color(0xFF1E1912);
+  // --- Fonds & surfaces ---
+  /// Encre fumée — fond de base, et texte sur braise/miel.
+  static const charcoal = Color(0xFF120D09);
 
-  /// Level-2 surface: raised/interactive elements, selected cards, sheets, dialogs.
-  static const surfaceAlt = Color(0xFF2A2318);
+  /// Surface pleine niveau 1 (rarement utilisée seule : préférer [glass]).
+  static const charcoalSoft = Color(0xFF1E1711);
 
-  // --- Text ---
-  /// Primary text — warm parchment cream. >15:1 contrast on [charcoal].
-  static const cream = Color(0xFFF3ECE0);
+  /// Surface pleine niveau 2 — feuilles modales, dialogues.
+  static const surfaceAlt = Color(0xFF2A2019);
 
-  /// Secondary/muted text. 8.7:1 contrast on [charcoal].
-  static const creamMuted = Color(0xFFB8AFA0);
+  /// Verre fumé : carte posée sur le fond photo flouté.
+  static const glass = Color(0xA6150F0B);
 
-  // --- Status ---
-  /// Error / destructive. 5.4:1 contrast on [charcoal]. Use [charcoal] (not
-  /// [cream]) as foreground on an error-filled surface — see contrast note below.
-  static const red = Color(0xFFE0605A);
+  /// Verre plus opaque : barres de navigation, éléments très lus.
+  static const glassStrong = Color(0xD9150F0B);
 
-  /// Success. 6.0:1 contrast on [charcoal].
-  static const green = Color(0xFF5C9F6E);
+  /// Liseré clair du verre (bord supérieur qui "accroche" la lumière).
+  static const glassBorder = Color(0x24FFE9D2);
 
-  // --- Structural helpers ---
-  /// Hairline border for level-1 elevation (cream @ ~8% opacity) and the
-  /// DividerTheme color.
-  static const divider = Color(0x14F3ECE0);
+  // --- Texte ---
+  static const cream = Color(0xFFFFF4E6);
+  static const creamMuted = Color(0xFFD3C3B0);
 
-  /// ~45% black scrim behind modal bottom sheets / dialogs.
-  static const overlayScrim = Color(0x73000000);
+  // --- Statuts ---
+  static const red = Color(0xFFFF6E61);
+  static const green = Color(0xFF72D28F);
 
-  // --- Contrast-audit notes (WCAG 2.1 AA, sRGB relative luminance) ---
-  // Both directions were checked per screen surface, not assumed:
-  //   - Text/icons ON primary gold fill: charcoal-on-gold ≈ 8.2:1 vs
-  //     cream-on-gold ≈ 2.1:1 → dark (charcoal) foreground wins. Buttons use
-  //     `foregroundColor: AppColors.charcoal` on an `orange` background.
-  //   - Text ON secondary (terracotta) fill: cream-on-secondary ≈ 4.6:1 vs
-  //     charcoal-on-secondary ≈ 3.7:1 → light (cream) foreground wins here —
-  //     the opposite rule from primary gold, so don't assume one rule for both.
-  //   - Text ON error (red) fill: charcoal-on-red ≈ 5.7:1 vs cream-on-red ≈
-  //     3.0:1 → dark (charcoal) foreground wins.
-  //   - `red` and `green` were also checked against `charcoalSoft` and
-  //     `surfaceAlt`, not just `charcoal`; both surfaces are dark enough that
-  //     contrast stays clear of the 4.5:1 floor.
+  // --- Structure ---
+  static const divider = Color(0x1AFFF4E6);
+  static const overlayScrim = Color(0x99000000);
 }
 
-/// Corner-radius token scale — use these everywhere instead of ad hoc values
-/// so the "confident rectangles, pills only for tags/badges" language stays
-/// consistent across the app.
+/// Échelle de rayons — rectangles francs, pilules réservées aux étiquettes.
 class AppRadius {
-  /// Small tags, input focus rings, snackbar accents.
   static const xs = 4.0;
-
-  /// Chips, small icon buttons, checkbox corners.
   static const sm = 8.0;
-
-  /// Secondary buttons, text fields — kept tighter than buttons so buttons
-  /// visually "win" the screen.
-  static const md = 12.0;
-
-  /// Primary/elevated buttons, standard cards, order-mode option cards.
-  static const lg = 16.0;
-
-  /// Dialogs, feature/hero cards, restaurant-picker cards.
-  static const xl = 24.0;
-
-  /// Top corners of modal bottom sheets only.
-  static const xxl = 28.0;
-
-  /// Status badges, loyalty-tier pills, filter chips, avatar/logo frames.
+  static const md = 14.0;
+  static const lg = 20.0;
+  static const xl = 26.0;
+  static const xxl = 32.0;
   static const pill = 999.0;
+}
+
+/// Durées d'animation partagées.
+class AppMotion {
+  static const fast = Duration(milliseconds: 160);
+  static const medium = Duration(milliseconds: 320);
+  static const slow = Duration(milliseconds: 600);
+  static const curve = Curves.easeOutCubic;
 }
 
 ThemeData buildAppTheme() {
@@ -125,143 +88,167 @@ ThemeData buildAppTheme() {
       brightness: Brightness.dark,
       primary: AppColors.orange,
       onPrimary: AppColors.charcoal,
-      secondary: AppColors.secondary,
-      onSecondary: AppColors.cream,
+      secondary: AppColors.honey,
+      onSecondary: AppColors.charcoal,
       surface: AppColors.charcoal,
       onSurface: AppColors.cream,
       surfaceContainerHighest: AppColors.surfaceAlt,
       error: AppColors.red,
       onError: AppColors.charcoal,
     ),
-    scaffoldBackgroundColor: AppColors.charcoal,
+    // Transparent : chaque page est peinte par-dessus [AppBackdrop], que la
+    // transition de page ci-dessous glisse sous chaque route.
+    scaffoldBackgroundColor: Colors.transparent,
+    canvasColor: AppColors.charcoal,
   );
 
-  // Heritage/editorial serif for headlines, neutral grotesque for UI-dense
-  // body copy — "one voice speaks, one voice organizes". Fraunces never
-  // appears below titleLarge; Inter never carries a hero moment.
+  // Fraunces (serif chaleureux, "fait maison") pour les titres ; Plus
+  // Jakarta Sans (grotesque ronde et nette) pour tout ce qui se lit vite.
   final display = GoogleFonts.frauncesTextTheme(base.textTheme);
-  final body = GoogleFonts.interTextTheme(base.textTheme);
+  final body = GoogleFonts.plusJakartaSansTextTheme(base.textTheme);
 
   final textTheme = body.copyWith(
-    displayLarge: display.displayLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
-    displayMedium: display.displayMedium?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
-    headlineLarge: display.headlineLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
-    headlineMedium: display.headlineMedium?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
-    headlineSmall: display.headlineSmall?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w500),
-    titleLarge: display.titleLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w500, letterSpacing: 0.2),
-    titleMedium: body.titleMedium?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
-    titleSmall: body.titleSmall?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
-    bodyLarge: body.bodyLarge?.copyWith(color: AppColors.cream),
-    bodyMedium: body.bodyMedium?.copyWith(color: AppColors.creamMuted),
-    bodySmall: body.bodySmall?.copyWith(color: AppColors.creamMuted),
-    labelLarge: body.labelLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600, letterSpacing: 0.4),
+    displayLarge: display.displayLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700, height: 1.0),
+    displayMedium: display.displayMedium?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700, height: 1.0),
+    displaySmall: display.displaySmall?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700),
+    headlineLarge: display.headlineLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700, height: 1.1),
+    headlineMedium: display.headlineMedium?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700, height: 1.15),
+    headlineSmall: display.headlineSmall?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
+    titleLarge: display.titleLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w600),
+    titleMedium: body.titleMedium?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700, letterSpacing: -0.1),
+    titleSmall: body.titleSmall?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700),
+    bodyLarge: body.bodyLarge?.copyWith(color: AppColors.cream, height: 1.4),
+    bodyMedium: body.bodyMedium?.copyWith(color: AppColors.creamMuted, height: 1.45),
+    bodySmall: body.bodySmall?.copyWith(color: AppColors.creamMuted, height: 1.4),
+    labelLarge: body.labelLarge?.copyWith(color: AppColors.cream, fontWeight: FontWeight.w700, letterSpacing: 0.2),
+    labelMedium: body.labelMedium?.copyWith(color: AppColors.creamMuted, fontWeight: FontWeight.w600),
+    labelSmall: body.labelSmall?.copyWith(color: AppColors.creamMuted, fontWeight: FontWeight.w700, letterSpacing: 1.2),
   );
 
-  // Text fields keep a slightly tighter radius (md) than buttons (lg) so
-  // buttons visually "win" the screen.
-  final outlineBorder = OutlineInputBorder(
+  final fieldBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(AppRadius.md),
-    borderSide: BorderSide.none,
+    borderSide: const BorderSide(color: AppColors.glassBorder),
   );
 
   return base.copyWith(
     textTheme: textTheme,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: BackdropPageTransitionsBuilder(),
+        TargetPlatform.iOS: BackdropPageTransitionsBuilder(),
+        TargetPlatform.windows: BackdropPageTransitionsBuilder(),
+        TargetPlatform.macOS: BackdropPageTransitionsBuilder(),
+        TargetPlatform.linux: BackdropPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: BackdropPageTransitionsBuilder(),
+      },
+    ),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
+      foregroundColor: AppColors.cream,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
       iconTheme: const IconThemeData(color: AppColors.cream),
-      titleTextStyle: textTheme.headlineSmall,
+      titleTextStyle: textTheme.headlineSmall?.copyWith(fontSize: 24),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.charcoalSoft,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      fillColor: AppColors.glass,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       labelStyle: const TextStyle(color: AppColors.creamMuted),
+      floatingLabelStyle: const TextStyle(color: AppColors.orange, fontWeight: FontWeight.w600),
       hintStyle: TextStyle(color: AppColors.creamMuted.withValues(alpha: 0.6)),
+      prefixIconColor: AppColors.creamMuted,
       errorStyle: const TextStyle(color: AppColors.red),
-      border: outlineBorder,
-      enabledBorder: outlineBorder.copyWith(
-        borderSide: BorderSide(color: AppColors.creamMuted.withValues(alpha: 0.2)),
-      ),
-      focusedBorder: outlineBorder.copyWith(
-        borderSide: const BorderSide(color: AppColors.orange, width: 1.6),
-      ),
-      errorBorder: outlineBorder.copyWith(
-        borderSide: const BorderSide(color: AppColors.red, width: 1.2),
-      ),
-      focusedErrorBorder: outlineBorder.copyWith(
-        borderSide: const BorderSide(color: AppColors.red, width: 1.6),
-      ),
+      border: fieldBorder,
+      enabledBorder: fieldBorder,
+      focusedBorder: fieldBorder.copyWith(borderSide: const BorderSide(color: AppColors.orange, width: 1.6)),
+      errorBorder: fieldBorder.copyWith(borderSide: const BorderSide(color: AppColors.red, width: 1.2)),
+      focusedErrorBorder: fieldBorder.copyWith(borderSide: const BorderSide(color: AppColors.red, width: 1.6)),
     ),
     checkboxTheme: CheckboxThemeData(
-      fillColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return AppColors.orange;
-        return Colors.transparent;
-      }),
+      fillColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected) ? AppColors.orange : Colors.transparent,
+      ),
       side: BorderSide(color: AppColors.creamMuted.withValues(alpha: 0.6), width: 1.4),
-      // Dark check mark on gold fill — see the contrast-audit note in AppColors.
       checkColor: const WidgetStatePropertyAll(AppColors.charcoal),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: AppColors.orange,
-      linearTrackColor: AppColors.charcoalSoft,
+      linearTrackColor: AppColors.glassBorder,
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surfaceAlt,
+      surfaceTintColor: Colors.transparent,
       titleTextStyle: textTheme.headlineSmall,
       contentTextStyle: textTheme.bodyMedium,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        side: const BorderSide(color: AppColors.glassBorder),
+      ),
     ),
-    bottomSheetTheme: BottomSheetThemeData(
+    bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.surfaceAlt,
       modalBackgroundColor: AppColors.surfaceAlt,
+      surfaceTintColor: Colors.transparent,
       modalBarrierColor: AppColors.overlayScrim,
-      shape: const RoundedRectangleBorder(
+      showDragHandle: true,
+      dragHandleColor: AppColors.glassBorder,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: AppColors.surfaceAlt,
-      contentTextStyle: const TextStyle(color: AppColors.cream),
-      actionTextColor: AppColors.orange,
+      backgroundColor: AppColors.cream,
+      contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.charcoal, fontWeight: FontWeight.w600),
+      actionTextColor: AppColors.orangeDark,
       behavior: SnackBarBehavior.floating,
+      elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
     ),
     dividerTheme: const DividerThemeData(color: AppColors.divider, thickness: 1, space: 1),
+    chipTheme: ChipThemeData(
+      backgroundColor: AppColors.glass,
+      selectedColor: AppColors.orange,
+      side: const BorderSide(color: AppColors.glassBorder),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+      labelStyle: textTheme.labelLarge,
+      showCheckmark: false,
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.orange,
-        // Dark charcoal foreground on gold fill reads ~8.2:1 vs ~2.1:1 for a
-        // light foreground — see the contrast-audit note in AppColors.
         foregroundColor: AppColors.charcoal,
-        disabledBackgroundColor: AppColors.charcoalSoft,
-        disabledForegroundColor: AppColors.creamMuted.withValues(alpha: 0.5),
-        minimumSize: const Size.fromHeight(52),
-        elevation: 4,
-        // Soft warm-tinted "ember glow" shadow layered on top of the hairline-
-        // border elevation model, instead of relying on a plain black shadow.
-        shadowColor: AppColors.orangeDark.withValues(alpha: 0.22),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        disabledBackgroundColor: AppColors.glass,
+        disabledForegroundColor: AppColors.creamMuted.withValues(alpha: 0.45),
+        minimumSize: const Size.fromHeight(56),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+        textStyle: textTheme.labelLarge?.copyWith(fontSize: 16, fontWeight: FontWeight.w800),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.cream,
+        foregroundColor: AppColors.orange,
         minimumSize: const Size(0, 48),
+        textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.cream,
-        minimumSize: const Size(0, 48),
-        side: BorderSide(color: AppColors.creamMuted.withValues(alpha: 0.35)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        backgroundColor: AppColors.glass,
+        minimumSize: const Size(0, 52),
+        side: const BorderSide(color: AppColors.glassBorder),
+        textStyle: textTheme.labelLarge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
       ),
+    ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: AppColors.surfaceAlt,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
     ),
   );
 }

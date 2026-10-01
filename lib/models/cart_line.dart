@@ -54,8 +54,8 @@ class CartLine {
         sizeLabel: json['sizeLabel'] as String?,
         unitPrice: (json['unitPrice'] as num).toDouble(),
         supplements: (json['supplements'] as List<dynamic>? ?? [])
-            .map((s) => CartSupplement.fromJson(s as Map<String, dynamic>))
+            .map((s) => CartSupplement.fromJson(Map<String, dynamic>.from(s as Map)))
             .toList(),
-        quantity: json['quantity'] as int? ?? 1,
+        quantity: (json['quantity'] as num?)?.toInt() ?? 1,
       );
 }

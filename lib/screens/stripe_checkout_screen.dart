@@ -8,6 +8,7 @@ import '../data/menu_data.dart';
 import '../services/payment_intent_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ui.dart';
 import 'order_confirmation_screen.dart';
 
 /// Card payment for the current cart, via Stripe's PaymentSheet and the
@@ -18,14 +19,12 @@ class StripeCheckoutScreen extends StatefulWidget {
     super.key,
     required this.mode,
     required this.customerPhone,
-    required this.restaurantName,
     required this.fulfillmentDetail,
     this.reward,
   });
 
   final OrderMode mode;
   final String customerPhone;
-  final String? restaurantName;
   final String? fulfillmentDetail;
 
   /// Loyalty reward chosen on the cart screen, if any — carried through so
@@ -78,7 +77,6 @@ class _StripeCheckoutScreenState extends State<StripeCheckoutScreen> {
       final order = await appState.placeOrder(
         mode: widget.mode,
         customerPhone: widget.customerPhone,
-        restaurantName: widget.restaurantName,
         fulfillmentDetail: widget.fulfillmentDetail,
         paid: true,
         reward: widget.reward,
@@ -112,31 +110,39 @@ class _StripeCheckoutScreenState extends State<StripeCheckoutScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Paiement par carte')),
+      appBar: AppBar(title: const Text('Paiement')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
           children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppColors.charcoalSoft,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: AppColors.divider),
-              ),
+            // Le "ticket" : récapitulatif façon reçu, total en grand.
+            GlassCard(
+              radius: AppRadius.xl,
+              padding: const EdgeInsets.all(22),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Eyebrow('Votre commande'),
+                  const SizedBox(height: 14),
                   ...appState.cart.map(
                     (line) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Row(
                         children: [
-                          Text('${line.quantity} ×', style: textTheme.bodyMedium),
-                          const SizedBox(width: 8),
+                          Container(
+                            width: 28,
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.orange.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(AppRadius.xs),
+                            ),
+                            child: Text('${line.quantity}', style: textTheme.labelLarge?.copyWith(color: AppColors.orange)),
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              line.sizeLabel != null ? '${line.itemName} (${line.sizeLabel})' : line.itemName,
+                              line.sizeLabel != null ? '${line.itemName} · ${line.sizeLabel}' : line.itemName,
                               style: textTheme.bodyLarge,
                             ),
                           ),
@@ -146,48 +152,45 @@ class _StripeCheckoutScreenState extends State<StripeCheckoutScreen> {
                     ),
                   ),
                   if (widget.reward != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.card_giftcard, size: 16, color: AppColors.orange),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.card_giftcard_rounded, size: 18, color: AppColors.honey),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             '${widget.reward!.label} (récompense fidélité)',
-                            style: textTheme.bodyMedium?.copyWith(color: AppColors.orange),
+                            style: textTheme.bodyMedium?.copyWith(color: AppColors.honey),
                           ),
                         ),
+                        Text('offert', style: textTheme.bodySmall?.copyWith(color: AppColors.honey)),
                       ],
                     ),
                   ],
-                  const SizedBox(height: 8),
-                  const Divider(),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 14),
+                  const _DashedDivider(),
+                  const SizedBox(height: 14),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Expanded(child: Text('Total à payer', style: textTheme.titleLarge)),
+                      Expanded(child: Text('Total à payer', style: textTheme.titleMedium)),
                       Text(
                         formatPrice(appState.cartTotal),
-                        style: textTheme.headlineSmall?.copyWith(color: AppColors.orange),
+                        style: textTheme.displaySmall?.copyWith(color: AppColors.orange, fontSize: 34),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             if (!StripeConfig.isConfigured)
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: const Border(left: BorderSide(color: AppColors.badgeAmber, width: 3)),
-                ),
+              GlassCard(
+                borderColor: AppColors.honey.withValues(alpha: 0.5),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline, size: 18, color: AppColors.badgeAmber),
+                    const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.honey),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -200,20 +203,49 @@ class _StripeCheckoutScreenState extends State<StripeCheckoutScreen> {
                 ),
               ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _processing ? null : () => _pay(appState),
-              icon: _processing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.charcoal),
-                    )
-                  : const Icon(Icons.lock_outline, size: 20),
-              label: Text(_processing ? 'Paiement en cours…' : 'Payer ${formatPrice(appState.cartTotal)}'),
+            GlowButton(
+              icon: Icons.lock_rounded,
+              busy: _processing,
+              label: 'Payer ${formatPrice(appState.cartTotal)}',
+              onPressed: () => _pay(appState),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.verified_user_outlined, size: 15, color: AppColors.creamMuted),
+                const SizedBox(width: 6),
+                Text('Carte bancaire · paiement chiffré par Stripe', style: textTheme.bodySmall),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DashedDivider extends StatelessWidget {
+  const _DashedDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final count = (constraints.maxWidth / 10).floor();
+        return Row(
+          children: List.generate(
+            count,
+            (_) => Expanded(
+              child: Container(
+                height: 1.2,
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                color: AppColors.glassBorder,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

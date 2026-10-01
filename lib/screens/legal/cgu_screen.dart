@@ -57,7 +57,7 @@ class CguScreen extends StatelessWidget {
         ),
         const LegalSection(
           '8. Contact',
-          'Pour toute question relative aux présentes CGU, contactez-nous au 01 23 45 67 89 ou à '
+          'Pour toute question relative aux présentes CGU, contactez-nous au 07 61 85 18 31, au restaurant (250 Rue du Galupe, 64170 Artix) ou à '
               '[adresse e-mail de contact à renseigner].',
         ),
       ],

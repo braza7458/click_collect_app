@@ -28,9 +28,9 @@ class ProfileScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(14),
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceAlt,
+                    color: AppColors.glassStrong,
                     borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: AppColors.divider),
+                    border: Border.all(color: AppColors.glassBorder),
                   ),
                   child: Text(
                     'Vous naviguez en tant qu\'invité. Créez un compte (pseudo + mot de passe) pour cumuler des points.',
@@ -40,9 +40,9 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.charcoalSoft,
+                  color: AppColors.glass,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(color: AppColors.divider),
+                  border: Border.all(color: AppColors.glassBorder),
                 ),
                 child: Row(
                   children: [

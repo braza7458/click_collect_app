@@ -10,7 +10,7 @@
 // base Firebase derrière.
 //
 // RÈGLE POUR CLAUDE : à la fin de chaque session de travail (que ce soit
-// avec Ibrahim ou avec son ami), avant de terminer :
+// avec Ibrahim ou avec son ami Ryad), avant de terminer :
 //   1. Ajoute une entrée en haut de la section "HISTORIQUE DES SESSIONS"
 //      avec la date et ce qui a été fait/corrigé/cassé.
 //   2. Réécris entièrement la section "PROCHAINE ÉTAPE" avec ce qu'il
@@ -21,190 +21,298 @@
 //      jour aussi — ce fichier doit toujours refléter l'état réel du code,
 //      pas un instantané périmé.
 //
-// Dernière mise à jour : 17 septembre 2026.
+// Dernière mise à jour : 1er octobre 2026.
 //
 // =====================================================================
 // 1. VUE D'ENSEMBLE
 // =====================================================================
 //
-// Le projet "Les Poulets de Mamie" (rôtisserie, un seul restaurant) est
-// composé de 3 apps Flutter séparées + 1 backend Firebase partagé :
+// Le projet "Les Poulets de Mamie" (rôtisserie, UN SEUL restaurant :
+// 250 Rue du Galupe, 64170 Artix — 07 61 85 18 31) est composé de 3 apps
+// Flutter séparées + 1 backend Firebase partagé :
 //
 //   - click_collect_app      → app mobile cliente (commander à l'avance,
-//                               compte fidélité, historique de commandes,
-//                               paiement en ligne).
+//                               compte fidélité, suivi des commandes en
+//                               direct, paiement en ligne).
 //   - click_collect_kiosk    → borne self-service physique en boutique
 //                               (le client commande et paie directement
 //                               sur place, écran tactile en mode kiosque).
-//   - click_collect_terminal → terminal de réception pour le personnel
-//                               (affiche en direct les commandes qui
-//                               arrivent — app ET borne —, avec une alarme
-//                               sonore). C'est une COPIE de click_collect_kiosk
-//                               à l'origine (mêmes écrans borne dedans,
-//                               attract_screen/menu_screen/checkout_screen/
-//                               ticket_screen), avec en plus reception_screen.dart
-//                               (le vrai écran utile pour le personnel) et
-//                               staff_claim_service.dart par-dessus.
+//   - click_collect_terminal → terminal du personnel, 2 modes :
+//                               "Réception" (écran cuisine : TOUTES les
+//                               commandes app + bornes en direct, alarme,
+//                               calendrier de l'historique) et "Borne"
+//                               (exactement les mêmes écrans que
+//                               click_collect_kiosk).
+//
+// Les écrans "borne" (attract/order_type/menu/checkout/ticket, dialogue
+// d'options, pavé PIN) sont IDENTIQUES entre click_collect_kiosk et
+// click_collect_terminal depuis le 01/10/2026 : on les modifie dans le
+// terminal puis on recopie dans le kiosk. Seuls diffèrent : main.dart,
+// attract_screen.dart (le kiosk n'a pas de mode Réception →
+// StaffPanelScreen() sans paramètre), staff_panel_screen.dart (pas de
+// bascule de mode dans le kiosk), data/orders_repository.dart (le kiosk ne
+// fait qu'écrire), firebase_options.dart, et tout ce qui est propre à la
+// réception (reception_screen, order_calendar_screen, incoming_order,
+// alert_service, staff_claim_service, terminal_mode, widgets/order_card).
 //
 // Toutes les 3 apps + les Cloud Functions vivent sur le même projet
 // Firebase : "les-poulets-de-mamie" (compte contact.isnad.app@gmail.com).
 //
 // Stack commun : Flutter + Firebase (firebase_core, cloud_firestore,
-// firebase_auth, cloud_functions), google_fonts. click_collect_app et
-// click_collect_terminal utilisent en plus flutter_stripe: ^14.0.0
-// (paiement carte). click_collect_terminal et click_collect_kiosk
-// utilisent en plus wakelock_plus + window_manager (mode kiosque),
-// click_collect_terminal utilise aussi audioplayers (alarme sonore).
+// firebase_auth, cloud_functions), google_fonts, flutter_stripe ^14.0.0
+// (paiement carte — les 3 apps depuis le 01/10/2026). Kiosk + terminal :
+// wakelock_plus + window_manager (mode kiosque) ; terminal : audioplayers
+// (alarme sonore).
 //
-// Design system : "Braise Dorée" — thème sombre charcoal/or antique, voir
-// lib/theme/app_theme.dart dans chaque projet (AppColors, AppRadius).
+// Design system : "Feu de Bois" (depuis le 01/10/2026, remplace "Braise
+// Dorée"). Voir lib/theme/app_theme.dart + lib/widgets/ui.dart dans
+// chaque projet :
+//   - Couleurs (AppColors) : braise #F28C38 (= `orange`, action/CTA, reprise
+//     du logo), or miel #F6C35B (= `honey`, réservé à la fidélité), encre
+//     fumée #120D09 (= `charcoal`), crème #FFF4E6, verre fumé
+//     (`glass` / `glassStrong` / `glassBorder`) pour les cartes.
+//   - Polices : Fraunces (titres, serif chaleureux) + Plus Jakarta Sans
+//     (texte), via google_fonts.
+//   - Fond : photo assets/images/fond_flou.jpg (fond.jpg PRÉ-FLOUTÉ et
+//     assombri à l'export — aucun flou calculé à l'exécution) + voile
+//     dégradé + lueur braise, posé sous CHAQUE page par
+//     BackdropPageTransitionsBuilder (pageTransitionsTheme) → chaque page
+//     est opaque, pas de "fantôme" pendant les transitions. Les Scaffold
+//     sont donc transparents (scaffoldBackgroundColor: transparent).
+//   - Composants partagés (widgets/ui.dart, identique dans les 3 apps sauf
+//     la hauteur par défaut de GlowButton) : GlassCard, GlowButton (CTA en
+//     dégradé braise avec halo), Pressable (enfoncement au toucher),
+//     Eyebrow, SectionHeader, StatusPill, IconBadge, BrandSeal (logo dans
+//     un anneau), FadeSlideIn (apparition en cascade, sans Timer),
+//     CountUpText, EmptyState.
+//   - Kiosk/terminal : mêmes couleurs, tailles agrandies (kKioskTapHeight =
+//     64), KioskScrollBehavior (défilement à la souris aussi), et
+//     KioskConfig.ambientAnimations (animations d'ambiance en boucle de
+//     l'écran d'accueil borne — mis à false dans les tests, sinon
+//     pumpAndSettle ne finit jamais).
 //
-// GitHub : click_collect_app est déjà un repo git avec un remote GitHub
-// (https://github.com/braza7458/click_collect_app.git, branche main,
-// compte braza7458) mais avait ~30 fichiers modifiés/jamais commités avant
-// la session du 17/09/2026 (tout le travail Firebase/Stripe/fidélité).
-// click_collect_terminal et click_collect_kiosk n'étaient PAS encore des
-// repos git avant cette même session. Voir HISTORIQUE DES SESSIONS pour
-// l'état exact après la session du 17/09.
+// GitHub (compte braza7458, branche main, collaborateur Ryad) :
+//   - https://github.com/braza7458/click_collect_app
+//   - https://github.com/braza7458/click_collect_terminal
+//   - https://github.com/braza7458/click_collect_kiosk
 //
 // =====================================================================
 // 2. ÉTAT ACTUEL — click_collect_app (app cliente)
 // =====================================================================
 //
 // Écrans (lib/screens/) :
-//   - welcome_screen.dart       → écran d'accueil avant connexion
-//                                 ("Bienvenue chez Les Poulets de Mamie",
-//                                 boutons "Connexion / Inscription" et
-//                                 "Continuer en tant qu'invité").
+//   - welcome_screen.dart       → accueil avant connexion : photo nette
+//                                 (fond.jpg) fondue dans le fond flouté,
+//                                 logo, "Bienvenue chez Les Poulets de
+//                                 Mamie", boutons "Connexion / Inscription"
+//                                 et "Continuer en tant qu'invité".
 //   - login_screen.dart, signup_step1_screen.dart, signup_step2_screen.dart
 //                               → compte = pseudo + mot de passe UNIQUEMENT
-//                                 (pas d'e-mail, pas de téléphone stocké sur
-//                                 le compte — voir AppState._authErrorMessage
-//                                 et pseudoEmailFor() dans state/app_state.dart
-//                                 qui bricole une fausse adresse e-mail pour
-//                                 pouvoir utiliser Firebase Auth email/password).
-//   - dashboard_shell.dart      → shell avec bottom nav (4 onglets, voir
-//                                 screens/tabs/) : Accueil / Restaurants /
-//                                 Commander / Plus.
-//   - tabs/home_tab.dart        → onglet Accueil. Contient le bandeau
-//                                 "Bonjour {pseudo}" + bouton "Mon
-//                                 identifiant" (QR code), le carrousel
-//                                 d'offres du moment, la carte "Votre
-//                                 restaurant favori", le bloc "Événements &
-//                                 Ateliers", et 2 cartes d'action (carte /
-//                                 aide).
-//   - tabs/restaurants_tab.dart → liste des restaurants (actuellement 3,
-//                                 voir section Firestore ci-dessous).
-//   - tabs/order_tab.dart       → la carte / menu, catégories + items.
-//   - tabs/fidelity_tab.dart    → programme fidélité (paliers de points).
-//   - choose_restaurant_screen.dart, widgets/restaurant_picker_sheet.dart
-//                               → sélection du restaurant favori.
-//   - cart_screen.dart          → panier, choix du mode (click&collect /
-//                                 livraison / sur place), choix d'une
-//                                 récompense fidélité à appliquer, paiement.
-//   - stripe_checkout_screen.dart → paiement carte natif (flutter_stripe
-//                                 PaymentSheet). SEUL chemin de paiement
-//                                 actif (voir section Paiement ci-dessous).
-//   - web_checkout_screen.dart, services/web_stripe_checkout.dart
-//                               → paiement web (Stripe.js, Apple Pay/Google
-//                                 Pay navigateur) — ABANDONNÉ, fichiers
-//                                 orphelins non utilisés, voir section 6.
-//   - order_confirmation_screen.dart → écran de confirmation après commande.
-//   - order_history_screen.dart → "Mes commandes" (accessible depuis
-//                                 l'onglet Plus). BUG CONNU, voir PROCHAINE
-//                                 ÉTAPE #7.
-//   - profile_screen.dart       → "Mon profil" (pseudo, points, statut invité).
-//   - notifications_screen.dart → notifications locales (commande confirmée,
-//                                 récompense échangée...).
-//   - loyalty_intro_screen.dart → écran d'intro au programme fidélité.
-//   - legal/cgu_screen.dart, legal/privacy_screen.dart → CGU / confidentialité.
-//   - widgets/help_dialog.dart  → pop-up "Besoin d'aide ?" avec un numéro de
-//                                 téléphone EN DUR. Voir PROCHAINE ÉTAPE #8.
+//                                 (pseudoEmailFor() dans state/app_state.dart
+//                                 fabrique une fausse adresse pour Firebase
+//                                 Auth). Après inscription → directement
+//                                 loyalty_intro_screen.dart ("Bienvenue dans
+//                                 le club !") — plus d'étape "restaurant
+//                                 favori" (restaurant unique).
+//   - dashboard_shell.dart      → barre de navigation flottante en verre,
+//                                 5 onglets : Pour vous / Restaurant /
+//                                 Commander (badge = nb d'articles du
+//                                 panier) / Fidélité / Plus (point si
+//                                 notifications non lues).
+//   - tabs/home_tab.dart        → "Pour vous" : salutation + logo ; bouton
+//                                 "Me connecter" (invité → LoginScreen) OU
+//                                 "Mon identifiant" (connecté → carte membre
+//                                 QR) ; grande carte ouvert/fermé EN DIRECT
+//                                 calculée depuis les horaires ("Fermé ·
+//                                 ouvre à 18h", horaires du jour, adresse,
+//                                 bouton Commander) ; bandeau points fidélité
+//                                 (connecté) ; carrousel "Les
+//                                 incontournables" avec les photos
+//                                 tasty_cheddar.jpg et tajine.jpg ;
+//                                 "Événements à venir" (liste _events VIDE →
+//                                 état "Rien de prévu pour l'instant" ; pour
+//                                 annoncer un événement, ajouter une entrée à
+//                                 _UpcomingEvents._events) ; raccourcis Carte
+//                                 / Aide.
+//   - tabs/restaurant_tab.dart  → "Restaurant" (remplace l'ancienne liste
+//                                 restaurants_tab.dart) : photo, statut en
+//                                 direct, adresse, téléphone, boutons
+//                                 Appeler / Itinéraire, horaires de la
+//                                 semaine (jour courant surligné, jours
+//                                 fermés en rouge), services, et la carte
+//                                 papier (menu.jpeg) zoomable en plein écran.
+//   - tabs/order_tab.dart       → la carte : puces de catégories (avec
+//                                 icônes), plats avec photo quand on en a
+//                                 une (widgets/menu_visuals.dart :
+//                                 poulet.jpg pour les poulets rôtis,
+//                                 tasty_cheddar.jpg, tajine.jpg ; sinon
+//                                 l'icône de la catégorie), barre "Voir le
+//                                 panier" animée.
+//   - widgets/item_options_sheet.dart → fiche plat : grande photo, tailles
+//                                 M/L en grosses cartes, suppléments en
+//                                 puces, quantité, bouton "Ajouter · X €".
+//   - tabs/fidelity_tab.dart    → carte membre façon carte premium (or miel,
+//                                 points qui "comptent", progression),
+//                                 "comment ça marche", récompenses avec
+//                                 barre de progression, dernières commandes.
+//                                 Invité → écran d'invitation à créer un
+//                                 compte.
+//   - tabs/more_tab.dart        → "Mon espace" : carte profil, Mes
+//                                 commandes, Notifications, Mon profil,
+//                                 Appeler le restaurant, Aide, CGU,
+//                                 confidentialité, déconnexion.
+//   - cart_screen.dart          → panier : lignes avec stepper, mode
+//                                 (Click & Collect / Livraison / Service à
+//                                 table), créneaux de retrait PROPOSÉS
+//                                 UNIQUEMENT pendant les heures d'ouverture
+//                                 (toutes les 15 min, ≥ 20 min à l'avance,
+//                                 groupés par jour) + "Autre heure" vérifiée
+//                                 contre les horaires ; livraison/table
+//                                 seulement si ouvert ; téléphone pour SMS ;
+//                                 récompense fidélité ; total ; message qui
+//                                 dit ce qui manque pour commander.
+//   - stripe_checkout_screen.dart → paiement carte natif (PaymentSheet),
+//                                 récap façon ticket.
+//   - order_confirmation_screen.dart → coche animée + SUIVI EN DIRECT
+//                                 (frise En préparation → Prête →
+//                                 Récupérée, mise à jour quand le terminal
+//                                 change le statut).
+//   - order_history_screen.dart → "Mes commandes" : flux Firestore EN DIRECT
+//                                 (statut à jour), tirer pour actualiser,
+//                                 frise de suivi pour les commandes en cours.
+//                                 Marche aussi pour un invité (ses commandes
+//                                 portent l'uid de sa session anonyme).
+//   - profile_screen.dart, notifications_screen.dart, legal/* → inchangés
+//                                 sur le fond (style mis à jour).
+//   - widgets/help_dialog.dart  → feuille "Besoin d'aide ?" : 07 61 85 18 31,
+//                                 statut ouvert/fermé, bouton Appeler.
+//   - services/contact.dart     → callRestaurant() (tel:) et openItinerary()
+//                                 (Google Maps). AndroidManifest déclare les
+//                                 <queries> tel + https.
+//   - web_checkout_screen.dart, services/web_stripe_checkout.dart →
+//                                 paiement web ABANDONNÉ (orphelins, voir 6).
 //
 // État / données (lib/state/, lib/data/) :
-//   - state/app_state.dart      → state global (ChangeNotifier), tout passe
-//                                 par AppStateScope.of(context). Gère
-//                                 auth, panier, catalogue, restaurants,
-//                                 fidélité, historique de commandes,
-//                                 notifications. Persistance locale légère
-//                                 via shared_preferences (panier,
-//                                 notifications, dernier mode de commande) ;
-//                                 tout le reste (profil, points, historique)
-//                                 vit dans Firestore/Firebase Auth.
-//   - data/catalog_repository.dart → lit menuCategories / restaurants /
-//                                 rewardTiers depuis Firestore (PAS de
-//                                 données en dur dans menu_data.dart /
-//                                 restaurant_data.dart — ces fichiers ne
-//                                 contiennent QUE les classes modèles
-//                                 (MenuItem, MenuCategory, RestaurantLocation),
-//                                 pas de données).
-//   - data/orders_repository.dart → submitOrder() écrit dans Firestore
-//                                 orders/{orderId} ; fetchOrdersForUser(uid)
-//                                 lit les commandes d'un utilisateur — BUG
-//                                 CONNU, voir PROCHAINE ÉTAPE #7.
-//   - data/user_repository.dart → profil Firestore users/{uid} (pseudo,
-//                                 points, restaurant favori).
-//   - data/loyalty_data.dart    → modèle RewardTier (paliers de points).
+//   - state/app_state.dart      → state global (AppStateScope.of(context)).
+//                                 `restaurant` (RestaurantLocation unique,
+//                                 valeur par défaut RestaurantLocation.artix
+//                                 remplacée par Firestore si dispo) ;
+//                                 loadCatalog() charge menu / restaurant /
+//                                 récompenses INDÉPENDAMMENT (un échec n'efface
+//                                 pas les autres) ; refreshOrders().
+//                                 favoriteRestaurantName / setFavoriteRestaurant
+//                                 SUPPRIMÉS (restaurant unique).
+//   - data/restaurant_data.dart → RestaurantLocation {name, address, phone,
+//                                 schedule} ; schedule = 7 listes de
+//                                 OpeningSlot (lundi → dimanche, minutes
+//                                 depuis minuit). Calcule isOpenNow,
+//                                 statusAt() ("Ouvert / Ferme bientôt /
+//                                 Fermé" + "jusqu'à 14h30" / "ouvre mercredi
+//                                 à 9h30"), nextOpening(), pickupSlots(),
+//                                 acceptsPickupAt(). fromMap() renvoie null
+//                                 pour les vieux documents sans `schedule`.
+//   - data/catalog_repository.dart → fetchMenu(), fetchRestaurant() (premier
+//                                 document au nouveau format, sinon .artix),
+//                                 fetchRewardTiers().
+//   - data/orders_repository.dart → submitOrder(), fetchOrdersForUser(),
+//                                 watchOrdersForUser() — requête sur userId
+//                                 SEUL, tri par date côté client (plus
+//                                 besoin d'index composite).
+//   - data/menu_data.dart       → MenuCategory a maintenant `iconKey` (champ
+//                                 `icon` des documents, partagé avec la borne).
 //
-// Assets (assets/images/) : logo.jpg, menu.jpeg (déclarés dans pubspec.yaml),
-// PLUS fond.jpg, tajine.jpg, tasty_cheddar.jpg (présents sur le disque et
-// déjà "git add"-és, mais PAS ENCORE déclarés dans pubspec.yaml → donc PAS
-// ENCORE utilisables par Image.asset tant qu'ils ne sont pas ajoutés à la
-// liste `assets:` du pubspec — voir PROCHAINE ÉTAPE #2 et #9).
+// Assets (pubspec.yaml) : logo.jpg, menu.jpeg, fond.jpg, fond_flou.jpg
+// (généré depuis fond.jpg : 540 px, flou gaussien 18, luminosité 0,55),
+// tasty_cheddar.jpg, tajine.jpg, poulet.jpg (recadrage du poulet de
+// fond.jpg, vignette des poulets rôtis). Les mêmes images sont copiées dans
+// click_collect_terminal et click_collect_kiosk.
+//
+// Tests : test/widget_test.dart (6 tests : accueil, ajout au panier,
+// paiement carte qui échoue proprement hors Firebase, commande sur place
+// jusqu'à la confirmation, inscription, calcul des horaires).
 //
 // =====================================================================
 // 3. ÉTAT ACTUEL — click_collect_terminal (terminal personnel)
 // =====================================================================
 //
-// Écrans borne (copiés de click_collect_kiosk, identiques ou presque) :
-// attract_screen.dart, menu_screen.dart, order_type_screen.dart,
-// checkout_screen.dart, ticket_screen.dart, staff/staff_panel_screen.dart,
-// staff/staff_pin_dialog.dart.
+// Mode Réception (écran par défaut) :
+//   - screens/reception_screen.dart → en-tête (logo, "Commandes en direct",
+//     point vert "en direct", horloge, bouton "Commandes" → calendrier,
+//     Espace équipe), compteurs du jour (nb, chiffre, appli/borne), 3
+//     colonnes Nouvelles / Prêtes / Terminées. Les 3 colonnes défilent de
+//     la même façon (ListView + Scrollbar toujours visible + défilement
+//     souris via KioskScrollBehavior). Carte de commande
+//     (widgets/order_card.dart) : numéro ("N° 12" borne / "#K3F9A" appli),
+//     badge BORNE/APPLI, chrono qui passe au orange (≥ 12 min) puis rouge
+//     (≥ 25 min), lignes, récompense fidélité "À AJOUTER", Payée / À
+//     encaisser, téléphone, total, gros bouton d'action. Alarme sonore +
+//     cadre lumineux + bannière "Nouvelle commande ! / Désactiver".
+//     ReceptionScreen accepte un `ordersStream` et un `calendarLoader`
+//     injectables (tests + démo hors ligne tool/reception_demo.dart).
+//   - screens/order_calendar_screen.dart → "Historique des commandes" :
+//     calendrier mensuel (flèches, appui sur "Octobre 2026" → choix année/
+//     mois), chaque jour affiche son nombre de commandes ("7 cdes") et
+//     "chauffe" selon l'activité ; appui sur un jour → détail : nombre,
+//     chiffre, appli/borne, payé en ligne, liste des commandes. Charge un
+//     mois à la fois (OrdersRepository.fetchOrdersBetween : filtre sur la
+//     chaîne ISO `date`, index simple automatique).
+//   - data/orders_repository.dart → watchIncomingOrders() lit TOUTES les
+//     commandes (plus de filtre source == 'app' : c'était le bug qui
+//     empêchait les commandes de la borne d'apparaître en réception).
+//   - models/incoming_order.dart → source (app/kiosk), ticketNumber,
+//     displayNumber, libellés des modes app (clickCollect/delivery/
+//     tableService) ET borne (dineIn → "Sur place", takeaway → "À
+//     emporter").
+//   - services/staff_claim_service.dart → claim `staff: true` (nécessaire
+//     pour lire toutes les commandes et changer leur statut).
 //
-// Écran spécifique au terminal (n'existe PAS dans le kiosk) :
-//   - screens/reception_screen.dart → LE vrai écran utile : liste en
-//     direct des commandes (app + borne) groupées en 3 colonnes "Nouvelles"
-//     / "Prêtes" / "Terminées" (IncomingOrderStatus confirmed/ready/completed),
-//     avec un bouton pour faire avancer le statut. Alarme sonore + bannière
-//     visuelle avec bouton "Désactiver" quand une nouvelle commande arrive
-//     (voir services/alert_service.dart — boucle jusqu'à 5 minutes ou jusqu'à
-//     ce que le bouton soit pressé, se relance si une nouvelle commande
-//     arrive pendant que l'alarme sonne déjà). Ajouté/corrigé le 16/09/2026.
-//   - services/staff_claim_service.dart → appelle la Cloud Function
-//     claimStaffTerminal pour que la session anonyme Firebase Auth du
-//     terminal reçoive le custom claim `staff: true` (nécessaire pour lire
-//     TOUTES les commandes et changer leur statut — voir firestore.rules).
+// Mode Borne : mêmes écrans que click_collect_kiosk (voir section 4).
 //
-// Config : lib/data/kiosk_config.dart → restaurant, adresse, PIN staff
-// (1957), timeouts. Actuellement câblé sur "Les Poulets de Mamie — Centre
-// Ville" / "12 Rue de la République" (placeholder à corriger, voir
-// PROCHAINE ÉTAPE #3/#4).
+// Config : lib/data/kiosk_config.dart → "Les Poulets de Mamie", "250 Rue
+// du Galupe, 64170 Artix", restaurantPhone, PIN staff 1957, timeouts,
+// ambientAnimations. Identique dans le kiosk.
 //
-// Identité Android : jusqu'au 17/09/2026, click_collect_terminal partageait
-// LE MÊME applicationId Android que click_collect_kiosk
-// (com.isnad.click_collect_kiosk) — installer l'un écrasait l'autre sur
-// l'appareil. CORRIGÉ le 17/09/2026 : le terminal a maintenant son propre
-// applicationId (com.isnad.click_collect_terminal) et sa propre app
-// Firebase Android (App ID 1:524117961573:android:b3cc03d81a13e296d88f8c).
-// Voir HISTORIQUE DES SESSIONS. ATTENTION : cette correction n'a été faite
-// QUE pour Android — si jamais iOS/web sont buildés pour le terminal un
-// jour, lib/firebase_options.dart (blocs ios/macos/web/windows) pointe
-// encore vers l'identité de click_collect_kiosk, il faudra faire pareil.
+// Identité Android : applicationId com.isnad.click_collect_terminal, app
+// Firebase Android 1:524117961573:android:b3cc03d81a13e296d88f8c (depuis le
+// 17/09/2026). Les blocs ios/macos/web/windows de firebase_options.dart
+// pointent encore vers l'identité du kiosk.
+//
+// Tests : test/widget_test.dart (4 tests, écran 1280×800 : réception hors
+// ligne, accueil borne, commande borne jusqu'au ticket, ET "les commandes
+// borne apparaissent en réception à côté des commandes appli + le
+// calendrier s'ouvre").
 //
 // =====================================================================
 // 4. ÉTAT ACTUEL — click_collect_kiosk (borne self-service)
 // =====================================================================
 //
-// Borne en libre-service installée en boutique : écran d'accueil "attract"
-// (mode veille), le client choisit son mode de commande, parcourt le menu,
-// paie, reçoit un ticket. Tourne en "mode kiosque" (services/kiosk_mode.dart,
-// wakelock_plus + window_manager) avec sortie possible via PIN staff caché
-// (widgets/staff_exit_gate.dart). Écrit dans la même collection Firestore
-// `orders` que l'app (avec `source: 'kiosk'` a priori — à vérifier contre
-// le code borne exact si besoin, non audité en détail dans cette session).
-// N'a PAS de paiement Stripe dans son pubspec (contrairement à app et
-// terminal) — à vérifier si c'est voulu ou un oubli le jour où quelqu'un
-// travaille dessus.
+// À JOUR avec le mode Borne du terminal depuis le 01/10/2026 :
+//   - attract_screen.dart → grande photo qui "respire" (zoom lent), logo,
+//     "Les Poulets de Mamie", slogan, bouton pulsant "Touchez l'écran pour
+//     commander", 2 plats mis en avant (Crousty Cheddar, Tajine) sur écran
+//     large ; appui long sur l'adresse en bas → PIN → espace équipe.
+//   - order_type_screen.dart → "Sur place ou à emporter ?" (2 grandes cartes).
+//   - menu_screen.dart → rail de catégories, grille de plats avec photos,
+//     panier à droite, "Valider ma commande".
+//   - widgets/item_options_dialog.dart → photo, tailles, suppléments en
+//     grandes cases, quantité.
+//   - checkout_screen.dart → récap + champ téléphone "Prévenu par SMS"
+//     (facultatif — la Cloud Function envoie le SMS confirmée/prête) +
+//     PAIEMENT STRIPE sur la borne (carte / Apple Pay / Google Pay, même
+//     compte Stripe et même Cloud Function createPaymentIntent que l'app)
+//     OU "Payer en caisse".
+//   - ticket_screen.dart → numéro géant, payé ou à régler en caisse,
+//     compte à rebours avant retour à l'accueil.
+//   - models/ticket.dart a le champ `paid`, KioskState.placeOrder(paid:).
+//   - data/orders_repository.dart → submitTicket() écrit dans `orders` avec
+//     source: 'kiosk', status: 'confirmed', paid → apparaît en direct dans
+//     la réception du terminal (vérifié par test).
+//   - Android : MainActivity = FlutterFragmentActivity, thèmes AppCompat,
+//     dépendance androidx.appcompat, meta-data Google Pay (comme le
+//     terminal) — nécessaires à flutter_stripe.
+//   - tool/borne_demo.dart → démo hors ligne (carte fictive, sans Firebase).
+//
+// Tests : test/widget_test.dart (2 tests, écran 1280×800).
 //
 // =====================================================================
 // 5. BACKEND FIREBASE (projet "les-poulets-de-mamie")
@@ -212,350 +320,149 @@
 //
 // -- Firestore — collections --
 //   - menuCategories/{id}   → catalogue (lecture publique, écriture
-//                             uniquement via tool/seed_firestore.dart ou
-//                             à la main dans la console — voir
-//                             firestore.rules). Champs : title, icon,
+//                             bloquée par les règles). Champs : title, icon,
 //                             items[] (name, price, sizes[{label,price}],
 //                             note, allowsSupplements, isAddOn, isInfoOnly,
 //                             infoLabel), order.
-//   - restaurants/{id}      → lecture publique, écriture bloquée pareil.
-//                             Champs actuels : name, address, hours
-//                             (UNE SEULE chaîne de texte, ex "11h30 -
-//                             21h30" — PAS de champ `phone`, PAS
-//                             d'horaires par jour). Voir PROCHAINE ÉTAPE
-//                             #3/#4 : le modèle RestaurantLocation
-//                             (lib/data/restaurant_data.dart) devra être
-//                             étendu.
+//   - restaurants/{id}      → lecture publique, écriture bloquée. NOUVEAU
+//                             FORMAT (tool/seed_firestore.dart) : name,
+//                             address, phone, schedule[{day: 1..7, slots:
+//                             [{open:'09:30', close:'14:30'}, ...]}], plus
+//                             `hours` (texte résumé) et `isOpenNow` gardés
+//                             uniquement pour les anciennes versions de
+//                             l'app. ⚠️ VOIR PROCHAINE ÉTAPE #1 : pas
+//                             encore poussé dans Firestore.
 //   - rewardTiers/{id}      → paliers fidélité (points, label, icon).
-//   - users/{uid}           → profil compte (username, points,
-//                             favoriteRestaurantName). Lecture/écriture
-//                             réservée au propriétaire du uid.
-//   - orders/{orderId}      → commandes, écrites par app ET kiosk/terminal
-//                             (même collection). Champs (voir
-//                             lib/models/order.dart côté app et
-//                             lib/models/incoming_order.dart côté
-//                             terminal) : id, date (ISO 8601 string), mode,
-//                             lines[], total, pointsEarned, restaurantName,
-//                             fulfillmentDetail, status
-//                             (confirmed/ready/completed), paid, userId,
-//                             customerPhone, appliedRewardLabel, source
-//                             ('app' ou 'kiosk'). Création : tout utilisateur
-//                             authentifié (y compris sessions anonymes
-//                             invité/borne/terminal). Lecture : le
-//                             propriétaire (userId) OU un terminal avec le
-//                             custom claim `staff: true`. Modification :
-//                             uniquement le champ `status`, uniquement par
-//                             un terminal `staff: true`.
+//   - users/{uid}           → profil (username, points ; l'ancien champ
+//                             favoriteRestaurantName n'est plus écrit).
+//   - orders/{orderId}      → commandes app ET bornes. Champs : id, date
+//                             (ISO 8601 string), mode, lines[], total,
+//                             pointsEarned, restaurantName,
+//                             fulfillmentDetail, status (confirmed/ready/
+//                             completed), paid, userId, customerPhone,
+//                             appliedRewardLabel, source ('app' | 'kiosk'),
+//                             number (borne uniquement). Règles :
+//                             création par tout authentifié ; lecture par
+//                             le propriétaire ou un terminal staff ;
+//                             modification du seul `status` par un
+//                             terminal staff.
 //
-// -- Index composite (firestore.indexes.json) --
-//   Un seul index déclaré actuellement : orders (source ASC, date DESC).
-//   ⚠️ AUCUN index pour la requête (userId ==, orderBy date) utilisée par
-//   OrdersRepository.fetchOrdersForUser() côté app → voir PROCHAINE ÉTAPE
-//   #7, c'est très probablement LA cause du bug "mes commandes vides".
+// -- Index (firestore.indexes.json) --
+//   orders (source ASC, date DESC) — plus utilisé par le code mais
+//   inoffensif. Aucun index composite n'est nécessaire au code actuel.
 //
 // -- Cloud Functions (functions/index.js, Node 20, gen2) --
-//   - claimStaffTerminal (us-central1, onCall) → donne le custom claim
-//     staff:true à l'appelant (protégé par le code STAFF_SETUP_CODE = "1957",
-//     doit rester synchro avec KioskConfig.staffPin dans kiosk/terminal).
-//   - createPaymentIntent (us-central1, onCall, secret STRIPE_SECRET_KEY)
-//     → crée un PaymentIntent Stripe. Depuis le 16/09/2026 :
-//     payment_method_types: ['card'] uniquement (avant :
-//     automatic_payment_methods, qui faisait apparaître Link/Klarna/
-//     Bancontact/Amazon Pay/Satispay/EPS en plus de la carte).
-//   - onOrderCreatedSendConfirmationSms (europe-west1, onDocumentCreated
-//     sur orders/{orderId}, secret BREVO_API_KEY) → SMS de confirmation via
-//     l'API Brevo (transactionalSMS/send), expéditeur "PouletMamie".
-//   - onOrderReadySendSms (europe-west1, onDocumentUpdated sur
-//     orders/{orderId}, même secret) → SMS "commande prête" quand status
-//     passe à "ready".
-//   Ces 2 fonctions SMS ont été cassées un moment (voir historique) puis
-//   remises en marche et CONFIRMÉES FONCTIONNELLES le 16/09/2026 (SMS
-//   réellement reçus par l'utilisateur après achat de crédits Brevo).
+//   - claimStaffTerminal (onCall) → claim staff:true (code STAFF_SETUP_CODE
+//     "1957", synchro avec KioskConfig.staffPin).
+//   - createPaymentIntent (onCall, secret STRIPE_SECRET_KEY) → carte
+//     uniquement. Utilisée par l'app, le terminal (borne) ET le kiosk.
+//   - onOrderCreatedSendConfirmationSms / onOrderReadySendSms (Brevo,
+//     expéditeur "PouletMamie") → s'appliquent à TOUTES les commandes
+//     (app et bornes) qui ont un customerPhone.
 //
 // -- SMS (Brevo) --
-//   Le SMS transactionnel Brevo nécessite des crédits payants SÉPARÉS de
-//   l'abonnement email "Starter" (7€/mois) — malgré le fait que la page
-//   de tarification Brevo liste "Email et SMS" comme inclus, sans préciser
-//   que le SMS a son propre système de crédits. ~4,5 crédits par SMS vers
-//   la France, crédits vendus par lots de 100 (100 crédits = 1€) → ~5
-//   centimes/SMS. Le compte avait 0 crédit SMS jusqu'au 16/09/2026 (tous
-//   les SMS étaient rejetés silencieusement, statut "Rejeté" visible dans
-//   Brevo → Transactionnel → SMS → Temps réel, sans qu'aucune erreur ne
-//   remonte côté app ni côté logs Cloud Functions). Crédits achetés (5€ /
-//   100 SMS), SMS confirmés reçus depuis.
+//   Crédits SMS payants séparés de l'abonnement email (~5 centimes/SMS).
+//   Fonctionnel depuis le 16/09/2026.
 //
 // =====================================================================
 // 6. PAIEMENT (Stripe)
 // =====================================================================
 //
-// SEUL chemin actif : paiement carte natif via flutter_stripe's
-// PaymentSheet (lib/screens/stripe_checkout_screen.dart dans
-// click_collect_app, et l'équivalent dans click_collect_terminal). Utilise
-// createPaymentIntent (Cloud Function ci-dessus). Depuis le 16/09/2026,
-// carte uniquement (plus de Link/Klarna/etc.).
+// Chemin actif : PaymentSheet natif (flutter_stripe) dans l'app
+// (stripe_checkout_screen.dart, carte uniquement, sans champ pays) et dans
+// les bornes (checkout_screen.dart du terminal et du kiosk, carte + Apple
+// Pay / Google Pay selon l'appareil). Clé publique de test par défaut
+// (StripeConfig, surchargeable par --dart-define=STRIPE_PUBLISHABLE_KEY).
 //
-// PAS ENCORE FAIT : billingDetailsCollectionConfiguration pour supprimer
-// le champ "Pays / région" du formulaire carte — ajouté dans
-// stripe_checkout_screen.dart de click_collect_app le 16/09/2026
-// (BillingDetailsCollectionConfiguration(address: AddressCollectionMode.never)),
-// mais PAS encore vérifié si click_collect_terminal a la même chose (à
-// vérifier/répliquer si le terminal a aussi un écran de paiement carte
-// utilisé en pratique).
-//
-// ABANDONNÉ (ne pas reprendre sauf demande explicite) : une tentative de
-// paiement WEB avec Apple Pay/Google Pay via Stripe.js (Express Checkout +
-// Payment Element) dans click_collect_app — fichiers
-// lib/screens/web_checkout_screen.dart, lib/services/web_stripe_checkout.dart,
-// web/poulets_stripe.js. Abandonnée après ~1h de debug sans succès (bug
-// jamais trouvé). Ces fichiers existent toujours sur le disque mais ne sont
-// PLUS importés depuis main.dart (donc n'affectent pas la compilation
-// native). Apple Pay est de toute façon iOS-only — jamais visible sur
-// Android quoi qu'il arrive.
+// ABANDONNÉ (ne pas reprendre sauf demande explicite) : paiement WEB Apple
+// Pay/Google Pay via Stripe.js — fichiers orphelins web_checkout_screen.dart,
+// services/web_stripe_checkout.dart, web/poulets_stripe.js.
 //
 // =====================================================================
 // 7. HISTORIQUE DES SESSIONS (la plus récente en premier)
 // =====================================================================
 //
+// --- 01/10/2026 ---
+// - Les 11 tâches de la session du 17/09 implémentées (app 1 à 9,
+//   terminal 1 et 2) — détail dans les sections 2 et 3 :
+//   app 1 "Me connecter" pour l'invité / "Mon identifiant" connecté ;
+//   app 2 images Tasty Cheddar + Tajine sur l'accueil ; app 3 restaurant
+//   unique 250 Rue du Galupe / 07 61 85 18 31 partout (app, kiosk,
+//   terminal, CGU) ; app 4 horaires par jour (lundi/mardi fermés,
+//   mer→sam 9h30–14h30 + 18h–21h, dim 9h30–14h30) avec statut
+//   ouvert/fermé en direct et créneaux de retrait limités aux heures
+//   d'ouverture ; app 5 "Événements à venir" sans faux événements ; app 6
+//   Crousty Cheddar M 8,50 € / L 10,00 € (seed — voir PROCHAINE ÉTAPE #1) ;
+//   app 7 "Mes commandes" réparé (cause : requête userId + orderBy(date)
+//   sans index composite, erreur avalée → requête sur userId seul + tri
+//   côté client) et passé en direct ; app 8 numéro d'aide 07 61 85 18 31 ;
+//   app 9 fond photo flouté sur toute l'app. Terminal 1 bouton
+//   "Commandes" → calendrier ; terminal 2 colonnes toutes défilantes
+//   (barre visible + défilement souris).
+// - BUG CORRIGÉ "borne pas reliée au terminal" : la réception filtrait
+//   `source == 'app'`, donc les commandes de la borne (source 'kiosk')
+//   n'apparaissaient jamais. Filtre retiré, modes de la borne traduits,
+//   badge BORNE/APPLI, test automatique ajouté.
+// - Kiosk mis à jour : paiement Stripe sur la borne, Ticket.paid,
+//   tous les écrans borne alignés sur le terminal, config Android Stripe.
+// - Refonte visuelle complète des 3 apps : design system "Feu de Bois"
+//   (voir section 1). Vérifié visuellement en version web (app mobile 375
+//   px, réception + calendrier et borne 1280×800 via les démos hors ligne).
+// - Démos hors ligne ajoutées (aucune donnée réelle touchée) :
+//   click_collect_terminal/tool/reception_demo.dart et
+//   click_collect_kiosk/tool/borne_demo.dart.
+// - `flutter analyze` propre et tous les tests verts sur les 3 apps ;
+//   `flutter build apk --debug` du kiosk vérifié (config Stripe Android).
+//
 // --- 17/09/2026 ---
-// - Diagnostiqué et corrigé : click_collect_terminal et click_collect_kiosk
-//   partageaient le même applicationId Android (com.isnad.click_collect_kiosk)
-//   → installer l'un écrasait l'autre sur l'appareil ("le terminal ouvrait
-//   le kiosk"). Terminal recréé avec son propre applicationId
-//   (com.isnad.click_collect_terminal), nouvelle app Firebase Android créée
-//   (App ID 1:524117961573:android:b3cc03d81a13e296d88f8c),
-//   android/app/google-services.json et lib/firebase_options.dart du
-//   terminal mis à jour en conséquence. `flutter analyze` + `flutter build
-//   apk --debug` OK sur le terminal après coup.
-// - Création de ce fichier log.dart (demande explicite d'Ibrahim, pour que
-//   Claude — le sien ou celui de son ami — puisse lire l'état du projet
-//   sans tout réexplorer).
-// - Recueil des 11 points listés en section PROCHAINE ÉTAPE (9 pour
-//   click_collect_app, 2 pour click_collect_terminal) — DEMANDE EXPLICITE
-//   D'IBRAHIM : NE RIEN CODER pour ces 11 points pendant cette session,
-//   uniquement les documenter ici pour qu'une session future (la sienne ou
-//   celle de son ami) les implémente directement.
-// - Aide à la mise sur GitHub des 3 dossiers (voir état des repos en
-//   section 1 / commit(s) de cette session pour le détail exact — à
-//   compléter par Claude une fois la mise sur GitHub terminée).
+// - Terminal et kiosk partageaient le même applicationId Android → corrigé
+//   (terminal = com.isnad.click_collect_terminal + nouvelle app Firebase).
+// - Création de ce log.dart ; 11 tâches consignées (sans les coder, à la
+//   demande d'Ibrahim) ; mise sur GitHub des 3 dossiers + collaborateur Ryad.
 //
 // --- 16/09/2026 ---
-// - Restriction des moyens de paiement Stripe à la carte uniquement
-//   (functions/index.js : payment_method_types: ['card']).
-// - Suppression du champ "Pays/région" du formulaire carte
-//   (BillingDetailsCollectionConfiguration(address: AddressCollectionMode.never)
-//   dans stripe_checkout_screen.dart de click_collect_app).
-// - Refonte de l'alarme du terminal (services/alert_service.dart +
-//   screens/reception_screen.dart) : boucle jusqu'à 5 minutes au lieu de 2
-//   bips, bouton "Désactiver" qui apparaît à chaque nouvelle commande et
-//   relance le minuteur de 5 min si une commande arrive pendant que
-//   l'alarme sonne déjà.
-// - Diagnostic + correction des SMS qui ne partaient jamais : (a) une
-//   ancienne révision des Cloud Functions plantait au démarrage
-//   ("Cannot find module '@google-cloud/firestore'") → redéployé
-//   proprement ; (b) le compte Brevo n'avait 0 crédit SMS → crédits
-//   achetés par Ibrahim, SMS confirmés reçus.
-// - Avant ça (même session, plus tôt) : ~1h de debug infructueux sur un
-//   paiement web Apple Pay/Google Pay via Stripe.js → abandonné à la
-//   demande d'Ibrahim (voir section 6).
-// - Correction d'un bug de build Android : des imports web-only
-//   (dart:ui_web, package:web) dans web_checkout_screen.dart /
-//   web_stripe_checkout.dart avaient cassé la compilation Android native
-//   de click_collect_app ("impossible de lancer l'appli") — corrigé en
-//   retirant leur import depuis cart_screen.dart (fichiers rendus orphelins
-//   plutôt que supprimés).
+// - Stripe carte uniquement ; champ "Pays/région" retiré ; alarme du
+//   terminal 5 min + bouton "Désactiver" ; SMS réparés (redéploiement des
+//   fonctions + crédits Brevo) ; paiement web Apple/Google Pay abandonné ;
+//   correction du build Android cassé par des imports web-only.
 //
-// --- Sessions antérieures (résumé, non détaillé ici) ---
-// - Mise en place complète du backend Firebase (Auth, Firestore, Cloud
-//   Functions) pour remplacer les données en dur.
-// - Refonte visuelle complète : design system "Braise Dorée".
-// - Ajout du parcours complet : connexion, inscription, fidélité,
-//   dashboard, panier, historique.
-// - Intégration Stripe native (PaymentSheet) dans l'app et le terminal.
-// - Construction de click_collect_kiosk et click_collect_terminal (borne +
-//   réception personnel).
+// --- Sessions antérieures (résumé) ---
+// - Backend Firebase complet (Auth, Firestore, Functions), design "Braise
+//   Dorée", parcours connexion/inscription/fidélité/panier/historique,
+//   Stripe natif, construction du kiosk et du terminal.
 //
 // =====================================================================
-// 8. PROCHAINE ÉTAPE — À FAIRE (demandé le 17/09/2026, PAS ENCORE CODÉ)
+// 8. PROCHAINE ÉTAPE — À FAIRE
 // =====================================================================
 //
-// ⚠️ Ces 11 points ont été listés par Ibrahim le 17/09/2026 en demandant
-// EXPLICITEMENT qu'ils ne soient PAS implémentés tout de suite — juste
-// consignés ici pour qu'une prochaine session (la sienne ou celle de son
-// ami) les exécute directement. Les indications entre [crochets] sont des
-// pistes techniques trouvées en explorant le code pendant cette session,
-// pour accélérer le travail — pas des instructions de l'utilisateur.
-//
-// === click_collect_app ===
-//
-// 1) Écran d'accueil (onglet Accueil, lib/screens/tabs/home_tab.dart) :
-//    à côté de "Bonjour {pseudo}", remplacer le bouton "Mon identifiant"
-//    par "Me connecter" TANT QUE l'utilisateur est invité (appState.isGuest)
-//    — ce bouton doit amener directement à LoginScreen. Une fois connecté
-//    (appState.isGuest == false), garder le bouton actuel "Mon identifiant"
-//    (QR code, voir _showMemberCard()) tel quel.
-//    [Piste : home_tab.dart lignes 36-41 pour le bouton actuel, condition
-//    à ajouter sur appState.isGuest ; LoginScreen déjà importée nulle part
-//    dans ce fichier, import à ajouter depuis screens/login_screen.dart.]
-//
-// 2) Ajouter dans l'écran d'accueil les 2 images "tasty cheddar" et
-//    "tajine" (déjà présentes dans assets/images/tasty_cheddar.jpg et
-//    assets/images/tajine.jpg, déjà "git add"-ées mais PAS déclarées dans
-//    pubspec.yaml → à ajouter dans la liste `assets:` d'abord, sinon
-//    Image.asset plantera).
-//    [Piste : home_tab.dart a déjà un carrousel "_offers" avec des cartes
-//    texte only (_OfferCard) mentionnant justement "Le Crousty Cheddar" et
-//    "Tajine du mercredi" — le plus cohérent est probablement d'ajouter une
-//    image à ces cartes-là plutôt que créer une nouvelle section, mais à
-//    confirmer avec Ibrahim si un autre emplacement est voulu.]
-//
-// 3) Dans TOUTE l'application (click_collect_app + click_collect_kiosk +
-//    click_collect_terminal), ne garder qu'UN SEUL restaurant, avec ces
-//    infos : adresse "250 Rue du Galupe, 64170 Artix", téléphone
-//    "07 61 85 18 31".
-//    [Piste : (a) le modèle RestaurantLocation (click_collect_app/lib/data/
-//    restaurant_data.dart) n'a AUCUN champ `phone` actuellement (juste name/
-//    address/hours/isOpenNow) → à ajouter, avec toMap/fromMap. (b) Les 3
-//    restaurants actuels sont seedés dans Firestore via
-//    click_collect_app/tool/seed_firestore.dart (_restaurants, lignes ~193-197)
-//    → à remplacer par une seule entrée, puis re-exécuter
-//    `dart run tool/seed_firestore.dart` (attention : ce script écrit via
-//    l'API REST Firestore SANS AUTH, ça ne marche que si les règles
-//    Firestore sont temporairement ouvertes — sinon écrire les documents à
-//    la main dans la console, ou adapter le script). Il faudra aussi
-//    SUPPRIMER les 2 anciens documents restaurant-1/restaurant-2 devenus
-//    inutiles (le script ne fait que des PATCH/upsert, pas de nettoyage).
-//    (c) click_collect_kiosk/lib/data/kiosk_config.dart ET
-//    click_collect_terminal/lib/data/kiosk_config.dart ont CHACUN
-//    restaurantLocationName + restaurantAddress en dur (actuellement
-//    "Les Poulets de Mamie — Centre Ville" / "12 Rue de la République") →
-//    à mettre à jour dans les 2 fichiers, plus y ajouter un champ
-//    téléphone si utilisé quelque part dans ces 2 apps.]
-//
-// 4) Ajouter les bons horaires (probablement sur la fiche restaurant,
-//    lib/screens/tabs/restaurants_tab.dart et/ou home_tab.dart "Votre
-//    restaurant favori") :
-//      jeudi     09:30–14:30, 18:00–21:00
-//      vendredi  09:30–14:30, 18:00–21:00
-//      samedi    09:30–14:30, 18:00–21:00
-//      dimanche  09:30–14:30
-//      lundi     Fermé
-//      mardi     Fermé
-//      mercredi  09:30–14:30, 18:00–21:00
-//    [Piste : le champ `hours` actuel de RestaurantLocation est UNE SEULE
-//    chaîne de texte plate (ex "11h30 - 21h30"), pas un horaire par jour →
-//    le modèle devra être étendu (soit une Map<String,String> jour→plage,
-//    soit une liste de jours structurée) pour représenter des horaires
-//    différents par jour + jours fermés. Impacte restaurant_data.dart,
-//    catalog_repository.dart (fromMap/toMap), tool/seed_firestore.dart, et
-//    l'écran qui affiche les horaires.]
-//
-// 5) Section "Événements & Ateliers" de l'écran d'accueil
-//    (home_tab.dart) : enlever le mot "Ateliers" du titre (donc "Événements
-//    & Ateliers" → probablement juste "Événements"), ET enlever les
-//    événements actuels (placeholders "Atelier découpe de poulet" /
-//    "Soirée dégustation") en les remplaçant par "Événements à venir".
-//    [Piste : home_tab.dart ligne 108 pour le titre de section, classe
-//    _Event + const _events (lignes ~264-274) pour la liste en dur à vider/
-//    remplacer. Ambigu si "remplace par 'Événements à venir'" veut dire (a)
-//    renommer le titre de section en "Événements à venir" et vider la
-//    liste avec un état vide, ou (b) autre chose — à clarifier avec
-//    Ibrahim si besoin avant de coder, ou prendre la lecture (a) qui est la
-//    plus naturelle.]
-//
-// 6) Dans la carte (menu), le "Crousty Cheddar" doit avoir le prix
-//    "8,50€ / 10,00€" (comme M/L).
-//    [Piste : actuellement dans tool/seed_firestore.dart (_menuCategories,
-//    catégorie "Nos Bowls"), l'item "Crousty Cheddar" a price: null, sizes: [],
-//    note: 'Taille M / L — prix à confirmer' → à remplacer par
-//    sizes: [{'label': 'M', 'price': 8.50}, {'label': 'L', 'price': 10.00}]
-//    (exactement comme "Crousty Tenders" juste en dessous dans le même
-//    fichier), et retirer/adapter la note "prix à confirmer". Puis
-//    re-seeder ou modifier le document Firestore menuCategories/cat-1
-//    directement.]
-//
-// 7) "Mon profil" → "Mes commandes" (order_history_screen.dart) n'affiche
-//    pas les commandes passées : à corriger.
-//    [Piste très probable trouvée en explorant le code cette session :
-//    OrdersRepository.fetchOrdersForUser() (click_collect_app/lib/data/
-//    orders_repository.dart lignes 25-32) fait
-//    .where('userId', isEqualTo: uid).orderBy('date', descending: true)
-//    — une requête composite qui EXIGE un index Firestore composite
-//    (userId + date). Le fichier firestore.indexes.json ne déclare
-//    actuellement QU'UN SEUL index, sur (source ASC, date DESC) — AUCUN
-//    index sur (userId, date). Sans cet index, Firestore renvoie une
-//    erreur FAILED_PRECONDITION, qui est silencieusement avalée par le
-//    try/catch de AppState._loadUserProfile() (app_state.dart lignes
-//    157-171, commentaire "Offline — keep whatever profile..." — ce
-//    catch-all avale AUSSI les vraies erreurs, pas seulement le mode hors
-//    ligne). Ça expliquerait un historique systématiquement vide, sans
-//    aucune erreur visible. Fix probable : ajouter l'index composite
-//    (userId ASC, date DESC) sur la collection orders dans
-//    firestore.indexes.json, puis `firebase deploy --only firestore:indexes`
-//    — OU laisser Firestore le proposer automatiquement (l'erreur
-//    FAILED_PRECONDITION contient normalement un lien direct pour créer
-//    l'index en un clic, visible si on retire temporairement le try/catch
-//    pour voir l'erreur réelle en debug). À VÉRIFIER avant de considérer
-//    que c'est LA cause unique — il peut aussi y avoir un souci de
-//    `userId` non renseigné sur certaines commandes.]
-//
-// 8) Dans "Aide" (widgets/help_dialog.dart), remplacer le numéro en dur
-//    "01 23 45 67 89" par "07 61 85 18 31" (le numéro du snack).
-//    [Piste : help_dialog.dart ligne 9, une seule ligne à changer.]
-//
-// 9) Mettre une image de fond sur TOUTE l'application click_collect_app
-//    (tous les écrans), avec un peu de flou. L'image existe déjà dans
-//    assets/images/fond.jpg (déjà "git add"-ée, mais comme pour le point 2,
-//    PAS ENCORE déclarée dans pubspec.yaml).
-//    [Piste : à ajouter dans pubspec.yaml `assets:`. Pour l'appliquer
-//    "sur toute l'application" proprement plutôt que de dupliquer le code
-//    sur chaque écran, le plus propre est probablement un wrapper commun
-//    (par ex. dans main.dart via MaterialApp.builder, ou un widget
-//    partagé enveloppant chaque Scaffold) avec un Stack contenant
-//    Image.asset('assets/images/fond.jpg', fit: BoxFit.cover) puis un
-//    ImageFiltered/BackdropFilter(filter: ImageFilter.blur(...)) pour le
-//    flou. Attention : plusieurs écrans ont déjà leur propre fond/dégradé
-//    (ex. welcome_screen.dart utilise déjà assets/images/menu.jpeg en
-//    fond) — à voir avec Ibrahim si cette image de fond remplace
-//    welcome_screen.dart aussi ou seulement les écrans qui n'ont pas déjà
-//    une image de fond dédiée. Penser aussi à garder le texte lisible
-//    par-dessus (le thème actuel est déjà sombre avec du texte clair, donc
-//    probablement ajouter un scrim sombre semi-transparent entre le fond
-//    flouté et le contenu, comme le fait déjà welcome_screen.dart avec son
-//    LinearGradient).]
-//
-// === click_collect_terminal ===
-//
-// 1) Ajouter un bouton en haut de reception_screen.dart, "Commandes", qui
-//    ouvre un calendrier classique (année/mois/jour) : chaque case de jour
-//    est cliquable et affiche le nombre de commandes passées ce jour-là
-//    (et permet d'accéder à leur détail).
-//    [Piste : reception_screen.dart a déjà un AppBar avec une action
-//    (icône "Espace équipe" vers StaffPanelScreen, ligne ~132-139) — un
-//    bouton "Commandes" peut suivre le même pattern. Un package comme
-//    `table_calendar` (pub.dev) est l'option la plus rapide pour le
-//    calendrier plutôt que d'en construire un à la main. Il faudra une
-//    requête Firestore par jour sur orders (filtrée sur `date`, avec les
-//    limites de fuseau horaire à gérer puisque `date` est stocké en ISO
-//    8601 string — voir Order.toJson()/fromJson() dans click_collect_app,
-//    et IncomingOrder.fromFirestore() côté terminal). Pas d'écran de ce
-//    type actuellement dans le projet — nouveau screen à créer, ex.
-//    lib/screens/order_calendar_screen.dart.]
-//
-// 2) Vérifier que les colonnes "Nouvelles" et "Prêtes" sont bien
-//    déroulantes comme "Terminées" quand il y a plusieurs commandes (pour
-//    voir celles en dessous en scrollant).
-//    [Piste : en relisant reception_screen.dart pendant cette session
-//    (16-17/09/2026), les 3 colonnes ("Nouvelles", "Prêtes", "Terminées")
-//    utilisent EXACTEMENT le même widget _OrderColumn avec un
-//    Expanded(child: ListView.separated(...)) — donc structurellement,
-//    elles devraient déjà toutes défiler pareil. Le bug rapporté est peut-
-//    être un problème de contrainte de hauteur/overflow visible seulement
-//    en pratique sur l'appareil réel (pas évident en relisant juste le
-//    code), ou peut-être que le comportement a changé depuis. À reproduire
-//    sur l'appareil et déboguer visuellement plutôt que de partir d'une
-//    hypothèse de code non confirmée — voir aussi la mémoire "no extended
-//    live debugging" : privilégier un logs/dashboard/repro concret avant
-//    de itérer à l'aveugle sur le layout.]
+// 1) POUSSER LES NOUVELLES DONNÉES DANS FIRESTORE (pas encore fait) :
+//    tool/seed_firestore.dart contient le restaurant unique (adresse,
+//    téléphone, horaires `schedule`) et le Crousty Cheddar M 8,50 € /
+//    L 10,00 €, et supprime restaurants/restaurant-1 et restaurant-2. Les
+//    règles Firestore interdisent l'écriture du catalogue depuis un client,
+//    donc il faut SOIT un jeton OAuth d'un propriétaire du projet dans
+//    FIRESTORE_TOKEN, SOIT ouvrir temporairement l'écriture sur
+//    menuCategories/restaurants/rewardTiers dans firestore.rules
+//    (`firebase deploy --only firestore:rules`), lancer
+//    `dart run tool/seed_firestore.dart`, puis remettre les règles.
+//    En attendant : l'app affiche déjà le bon restaurant et les bons
+//    horaires (valeur intégrée RestaurantLocation.artix, utilisée tant que
+//    Firestore n'a pas le nouveau format), MAIS le Crousty Cheddar reste
+//    "Prix à définir" (non commandable) dans l'app et les bornes tant que
+//    menuCategories n'est pas mis à jour.
+// 2) Tester sur les vrais appareils : app Android (fond, horaires,
+//    "Mes commandes" en direct), terminal en mode Réception (une commande
+//    passée sur la borne doit sonner et apparaître avec le badge BORNE),
+//    paiement Stripe sur la borne.
+// 3) Les numéros de ticket borne repartent de 1 chaque jour sur CHAQUE
+//    appareil (compteur local) : si le kiosk ET le terminal en mode Borne
+//    servent le même jour, deux tickets peuvent avoir le même numéro. À
+//    traiter si les deux sont utilisés en même temps (compteur partagé
+//    dans Firestore, ou préfixe par appareil).
+// 4) Politique de confidentialité (legal/privacy_screen.dart) : le texte
+//    parle encore d'e-mail, date de naissance et restaurant favori, alors
+//    que les comptes n'ont qu'un pseudo + mot de passe — à réécrire (et à
+//    faire valider par un juriste, comme indiqué dans l'écran).
 //
 // =====================================================================
 // FIN DU LOG — rappel : mets-le à jour avant de terminer ta session.

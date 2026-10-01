@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ui.dart';
 import 'dashboard_shell.dart';
 import 'signup_step1_screen.dart';
 
@@ -70,6 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const FadeSlideIn(child: BrandSeal(size: 64)),
+                const SizedBox(height: 22),
+                const Eyebrow('Compte fidélité'),
+                const SizedBox(height: 6),
                 Text('Connexion', style: textTheme.headlineLarge),
                 const SizedBox(height: 8),
                 Text(
@@ -124,15 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(_errorMessage!, style: textTheme.bodySmall?.copyWith(color: AppColors.red)),
                 ],
                 const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: _submitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.charcoal),
-                        )
-                      : const Text('Connexion'),
+                GlowButton(
+                  label: 'Connexion',
+                  icon: Icons.login_rounded,
+                  busy: _submitting,
+                  onPressed: _submit,
                 ),
                 const SizedBox(height: 24),
                 Center(
